@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Post</h1>
+
+<form method="GET" action="{% url 'home' %}">
+    <input type="text" name="query" placeholder="Search..." class="form-control" value="{{ query }}" />
+    <br/>
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<br/>
+<h2>Posts</h2>
+
+{% if query %}
+    {% if post_list %}
+        {% for post in post_list %}
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.body|truncatewords:30 }}</p>
+            <a href="{% url 'article-details' post.pk %}">Read More</a>
+        {% endfor %}
+    {% else %}
+        <p>No posts found for your search query: <strong>{{ query }}</strong></p>
+    {% endif %}
+{% endif %}
+
+<ul>
+{% for post in object_list %}
+    <li><a href = "{% url 'article-details' post.pk %}">{{post.title}}</a> - <a href ="{% url 'category' post.category|slugify %}">{{post.category}} </a> - {{post.author}} - {{post.post_date}}<small>
+        {% if user.is_authenticated %}
+            {% if user.id == post.author.id %}
+           <a href="{% url 'update_post' post.pk %}">(Edit)</a>
+    
+           <a href="{% url 'delete_post' post.pk %}">(Delete)</a>
+            {% endif %}
+           {% endif %}
+
+    </small><br/>
+    {{post.body|slice:":200"}}</li>
+{% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{%if user.is_authenticated %}
+    {% if user.id == comment.author.id %}
+        <h2>Delete Comment?</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    {% else %}
+        You can't be here!
+    {% endif %}
+{% else %}
+
+You're not able to delete comments without logging in! Begone!
+
+{% endif %}
+
+{% endblock %}

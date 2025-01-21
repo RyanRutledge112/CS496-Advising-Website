@@ -1,0 +1,14 @@
+INSIDE OF GIT BASH
+
+Navigate to folder where the folder virt is located(You can also find the virt folder through file explorer, right click inside the file virt is in, and run git bash in there)
+EX: testfolder has the virt folder inside, so ~/testfolder
+
+Now to run the virtual environment use the following statement:
+source virt/Scripts/activate
+
+
+
+Now you can start working on the Django project provided. YOU NEED TO RUN THIS IN A VIRTUAL ENVIRONMENT, make sure to do this first
+
+TO RUN WEBSITE USE THE FOLLOWING STATEMENT AFTER MAKING VIRTUAL ENVIRONMENT AND NAVIGATING TO CORRECT FOLDER
+python manage.py runserver
