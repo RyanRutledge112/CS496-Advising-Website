@@ -10,5 +10,5 @@ source virt/Scripts/activate
 
 Now you can start working on the Django project provided. You have to run this in a virtual environment, make sure to do this first
 
-To run the website use the following statement after making a virtual environment and navigating to the correct folder(look for manage.py)
+To run the website use the following statement after making a virtual environment and navigating to the correct folder(look for manage.py, for this you'll want to be inside of the advisingwebsite folder)
 python manage.py runserver
