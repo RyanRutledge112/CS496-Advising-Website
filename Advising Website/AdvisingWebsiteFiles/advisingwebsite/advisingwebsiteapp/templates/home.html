@@ -1,4 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
 <h1>Hello World! This is the home page!</h1>
+<form id="uploadForm" action="{}" method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="formFile" class="form-label">Upload a pdf of your unofficial transcript here:</label>
+        <input class="form-control" type="file" id="formFile" name="pdfFile" accept=".pdf" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Upload</button>
+</form>
 {% endblock %}
