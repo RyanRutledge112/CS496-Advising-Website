@@ -3,7 +3,7 @@ import sys
 
 try:
     # Create an API client instance.
-    # For now, I will add the 
+    # For now, it will be hardcoded, i will fix it soon
     client = pdfcrowd.HtmlToPdfClient('pahmeh', '113d1aa4275b559bdb210eeb504fab45')
 
     # Specify the mapping of HTML content width to the PDF page width.
