@@ -39,4 +39,12 @@ def register(request):
         return redirect('home')  # Redirect to home after successful registration
 
     return render(request, 'register.html')
+
+def features(request):
+    return render(request, 'features.html')
     
+def messages(request):
+    return render(request, 'messages.html')
+
+def upload_transcript(request):
+    return render(request, 'uploadTranscript.html')
