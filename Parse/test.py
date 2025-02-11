@@ -4,9 +4,8 @@ import json
 
 # Initialize LlamaParse
 parser = LlamaParse(verbose=True)
-print(os.getenv("LLAMA_CLOUD_API_KEY"))
+# print(os.getenv("LLAMA_CLOUD_API_KEY"))
 
-# print("Yay")
 # Define file path
 file_path = "Parse/personal.pdf"
 

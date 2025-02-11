@@ -3,10 +3,13 @@ import os
 import json
 import re
 import pdfplumber
+from dotenv import load_dotenv
 
 def parse_transcript(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+    
+    load_dotenv()
 
     api_key = os.getenv("LLAMA_CLOUD_API_KEY")
     if not api_key:
