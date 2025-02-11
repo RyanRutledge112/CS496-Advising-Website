@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
+from .scraptranscript import parse_transcript
+import os
 
 def home(request):
     return render(request, 'home.html', {})
@@ -47,4 +49,19 @@ def messages(request):
     return render(request, 'messages.html')
 
 def upload_transcript(request):
+    if request.method == "POST" and request.FILES.get("pdfFile"):
+        uploaded_file = request.FILES["pdfFile"]
+        credit_hours = request.POST.get("inputCreditHours", "15")
+        file_path = f"uploads/{uploaded_file.name}"
+
+        os.makedirs("uploads", exist_ok=True)
+
+        with open(file_path, "wb+") as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+        
+        processed_data = parse_transcript(file_path)
+
+        return render(request, "uploadTranscript.html", {"data": processed_data})
+
     return render(request, 'uploadTranscript.html')

@@ -2,6 +2,8 @@ from llama_index.readers.llama_parse import LlamaParse
 import os
 import json 
 
+'''Converts pdf to json data'''
+
 # Initialize LlamaParse
 parser = LlamaParse(verbose=True)
 # print(os.getenv("LLAMA_CLOUD_API_KEY"))

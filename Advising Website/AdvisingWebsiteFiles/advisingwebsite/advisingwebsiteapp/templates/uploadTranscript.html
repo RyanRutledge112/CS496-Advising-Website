@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
-<form id="uploadForm" action="{}" method="POST" enctype="multipart/form-data">
+<form id="uploadForm" action="{% url 'uploadTranscript' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
     <div class="mb-3">
         <label for="formFile" class="form-label">Upload a pdf of your unofficial transcript here:</label>
         <input class="form-control" type="file" id="formFile" name="pdfFile" accept=".pdf" required>
