@@ -3,7 +3,8 @@ from django.contrib.auth.models import UserManager, AbstractBaseUser, Permission
 from django.utils import timezone
 from datetime import date, datetime
 
-# Create your models here.
+# Create your models here. Autoincremented id functions are created for every class, so there is no need to
+# explicitly write any code that makes a primary key with an autoincrementing id.
 
 class CustomUserManager(UserManager):
     def _create_user(self, email, first_name, last_name, password, is_student, is_advisor, **extra_fields):
@@ -58,3 +59,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def get_short_name(self):
         return self.first_name or self.email.split('@')[0]
+    
+class Chat(models.Model):
+    chat_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.chat_name
+
+class ChatMember(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
+    chat_last_viewed = models.DateTimeField(auto_now_add=True)
+    chat_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.user.get_full_name()} is a member of the chat named {self.chat.__str__()}'
+
+class Message(models.Model):
+    sent_by_member = models.ForeignKey(ChatMember, on_delete=models.CASCADE)
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
+    message_content = models.TextField()
+    date_sent = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.sent_by_member.user.get_full_name}\n{self.message_content}'
