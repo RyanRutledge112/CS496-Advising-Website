@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
-from django.contrib import messages
+from django.contrib import messages as django_messages
 from django.contrib.auth.decorators import login_required
 from .models import Chat, ChatMember, Message
 
@@ -21,7 +21,7 @@ def login_view(request):
             login(request, user)  # Log in
             return redirect('home')  # Redirect to homepage
         else:
-            messages.error(request, "Invalid email or password")  # Show error message
+            django_messages.error(request, "Invalid email or password")  # Show error message
     return render(request, 'login.html')
 
 def register(request):
@@ -37,7 +37,7 @@ def register(request):
 
         # Check if the user already exists
         if User.objects.filter(email=email).exists():
-            messages.error(request, "This email is already registered.")
+            django_messages.error(request, "This email is already registered.")
             return redirect('register')
 
         # Create a new user
@@ -98,6 +98,9 @@ def send_message(request):
         chat_member.save()
 
     return redirect('messages')
+
+def messages(request):
+    return render(request, 'messages.html')
 
 def upload_transcript(request):
     if request.method == "POST" and request.FILES.get("pdfFile"):
