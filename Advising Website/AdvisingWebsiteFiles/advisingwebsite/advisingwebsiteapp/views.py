@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import Chat, ChatMember, Message
 
 from advisingwebsiteapp.models import User
 from .scraptranscript import parse_transcript
@@ -29,13 +31,19 @@ def register(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
+        # Set default values for is_student and is_advisor
+        is_student = True  # Default to True (most users are students)
+        is_advisor = False  # Default to False (most users are not advisors)
+
         # Check if the user already exists
         if User.objects.filter(email=email).exists():
             messages.error(request, "This email is already registered.")
             return redirect('register')
 
         # Create a new user
-        user = User.objects.create_user(username=email, email=email, password=password, first_name=first_name, last_name=last_name)
+        user = User.objects.create_user(email=email, first_name=first_name, 
+                                        last_name=last_name, password=password,
+                                        is_student=is_student, is_advisor=is_advisor)
         user.save()
 
         # Log the user in after registration
@@ -44,11 +52,52 @@ def register(request):
 
     return render(request, 'register.html')
 
-def features(request):
-    return render(request, 'features.html')
-    
-def messages(request):
-    return render(request, 'messages.html')
+@login_required
+def messages_page(request):
+    # Get all chats where the user is a member
+    user_chats = Chat.objects.filter(chatmember__user=request.user)
+
+    # Get latest message and unread count for each conversation
+    conversations = []
+    for chat in user_chats:
+        last_message = Message.objects.filter(chat=chat).order_by('-date_sent').first()
+
+        # Get user's chat member record
+        chat_member = ChatMember.objects.get(chat=chat, user=request.user)
+
+        # Count unread messages (messages sent after user last viewed)
+        unread_count = Message.objects.filter(chat=chat, date_sent__gt=chat_member.chat_last_viewed).count()
+
+        conversations.append({
+            'chat': chat,
+            'last_message': last_message.message_content if last_message else "No messages yet.",
+            'unread_count': unread_count,
+        })
+
+    return render(request, 'messages.html', {
+        'conversations': conversations
+    })
+
+@login_required
+def send_message(request):
+    if request.method == "POST":
+        chat_id = request.POST.get('chat_id')
+        message_content = request.POST.get('message_content')
+
+        chat = Chat.objects.get(id=chat_id)
+        chat_member = ChatMember.objects.get(chat=chat, user=request.user)
+
+        Message.objects.create(
+            chat=chat,
+            sent_by_member=chat_member,
+            message_content=message_content
+        )
+
+        # Update the chat last viewed
+        chat_member.chat_last_viewed = timezone.now()
+        chat_member.save()
+
+    return redirect('messages')
 
 def upload_transcript(request):
     if request.method == "POST" and request.FILES.get("pdfFile"):
