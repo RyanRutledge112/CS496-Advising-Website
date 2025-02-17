@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
+
+from advisingwebsiteapp.models import User
 from .scraptranscript import parse_transcript
 import os
 
