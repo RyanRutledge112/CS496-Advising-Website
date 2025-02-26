@@ -7,32 +7,33 @@ from datetime import date, datetime
 # explicitly write any code that makes a primary key with an autoincrementing id.
 
 class CustomUserManager(UserManager):
-    def _create_user(self, email, first_name, last_name, password, is_student, is_advisor, **extra_fields):
+    def _create_user(self, email, first_name, last_name, password, is_student, is_advisor, student_id, **extra_fields):
         if not email:
             raise ValueError("You have no provided a valid e-mail address")
     
         email = self.normalize_email(email)
         user = self.model(email=email, first_name=first_name, last_name=last_name, 
-                          is_student=is_student, is_advisor=is_advisor, **extra_fields)
+                          is_student=is_student, is_advisor=is_advisor, student_id=student_id, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
 
         return user
     
-    def create_user(self, email=None, first_name=None, last_name=None, password=None, is_student=None, is_advisor=None, **extra_fields):
+    def create_user(self, email=None, first_name=None, last_name=None, password=None, is_student=None, is_advisor=None, student_id=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
-        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, **extra_fields)
+        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, student_id=None, **extra_fields)
     
-    def create_superuser(self, email=None, first_name=None, last_name=None, password=None, is_student=None, is_advisor=None, **extra_fields):
+    def create_superuser(self, email=None, first_name=None, last_name=None, password=None, is_student=None, is_advisor=None, student_id=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, **extra_fields)
+        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, student_id=None, **extra_fields)
     
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(blank=True, default='', unique=True)
     first_name = models.CharField(max_length=255, blank=True, default='')
     last_name = models.CharField(max_length=255, blank=True, default='')
+    student_id = models.IntegerField(null=True)
 
     is_student = models.BooleanField(default=True)
     is_advisor = models.BooleanField(default=False)
@@ -59,6 +60,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def get_short_name(self):
         return self.first_name or self.email.split('@')[0]
+    
+    def get_student_id(self):
+        return self.student_id
     
 class Chat(models.Model):
     chat_name = models.CharField(max_length=255)
@@ -128,3 +132,10 @@ class Prerequisites(models.Model):
 
     def __str__(self):
         return f"{self.prerequisite.course_name} is a prerequisite for {self.course.course_name}"
+    
+class UserDegree(models.Model):
+    user_student_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    degree = models.ForeignKey(Degree, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Student {self.user_student_id.get_full_name} with a student id of {self.user_student_id.student_id} is going for a degree in {self.degree.__str__}".strip()
