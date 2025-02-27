@@ -38,6 +38,15 @@
               </li>
               {% endif %}
             </ul>
+
+            <!--Right aligned items-->
+            {% if user.is_authenticated %}
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item">
+                <a class="nav-link" href="{%url 'profile' %}" style="color: white;">Profile</a>
+              </li>
+            </ul>
+            {% endif %}
           </div>
         </div>
       </nav>

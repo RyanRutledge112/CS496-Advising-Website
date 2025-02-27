@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, update_session_auth_hash
 from django.contrib import messages as django_messages
 from django.contrib.auth.decorators import login_required
 from .models import Chat, ChatMember, Message
+from django.contrib.auth.forms import PasswordChangeForm
 
 from advisingwebsiteapp.models import User
 from .scraptranscript import parse_transcript
@@ -119,3 +120,49 @@ def upload_transcript(request):
         return render(request, "uploadTranscript.html", {"data": processed_data})
 
     return render(request, 'uploadTranscript.html')
+
+def profile(request):
+    return render(request, 'profile.html')
+
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+
+        #update only the fields that have been filled in
+        if first_name:
+            request.user.first_name = first_name
+        if last_name:
+            request.user.last_name = last_name
+        if email:
+            request.user.email = email
+
+        request.user.save()
+        django_messages.success(request, 'Your profile has been updated.')
+        return redirect('profile')
+    return render(request, 'profile.html')
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')  # Get the old password from the form
+        form = PasswordChangeForm(request.user, request.POST)
+
+        # Check if the old password is correct
+        if not request.user.check_password(old_password):
+            django_messages.error(request, 'Your old password is incorrect.')
+            return render(request, 'changePassword.html', {'form': form})
+
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Keep the user logged in
+            django_messages.success(request, 'Your password was successfully updated!')
+            return redirect('profile')
+        else:
+            django_messages.error(request, 'Unable to update password. Try again!')
+            return render(request, 'changePassword.html', {'form': form})
+    else:
+        form = PasswordChangeForm(request.user)
+        return render(request, 'changePassword.html', {'form': form})
