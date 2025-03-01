@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.utils import timezone
 from django.contrib.auth import authenticate, login, update_session_auth_hash
 from django.contrib import messages as django_messages
 from django.contrib.auth.decorators import login_required
@@ -166,3 +167,9 @@ def change_password(request):
     else:
         form = PasswordChangeForm(request.user)
         return render(request, 'changePassword.html', {'form': form})
+    
+def index(request):
+    return render(request, 'chat/index.html')
+
+def room(request, room_name):
+    return render(request, "chat/room.html", {"room_name": room_name})

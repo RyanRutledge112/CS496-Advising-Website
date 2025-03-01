@@ -1,0 +1,2 @@
+For Windows
+pip freeze > requirements.txt //inside of advising website folder
