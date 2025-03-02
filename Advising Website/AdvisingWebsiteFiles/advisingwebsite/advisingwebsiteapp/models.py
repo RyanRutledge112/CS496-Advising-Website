@@ -139,3 +139,15 @@ class UserDegree(models.Model):
 
     def __str__(self):
         return f"Student {self.user_student_id.get_full_name} with a student id of {self.user_student_id.student_id} is going for a degree in {self.degree.__str__}".strip()
+
+
+class SimpleMessage(models.Model): #Testing purposes, needed for simple implementation of message system that will be more complex later
+    author = models.ForeignKey(User, related_name="author_messages",on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.author.email
+    
+    def last_10_messages(self):
+        return SimpleMessage.objects.order_by('-timestamp').all()[:10]

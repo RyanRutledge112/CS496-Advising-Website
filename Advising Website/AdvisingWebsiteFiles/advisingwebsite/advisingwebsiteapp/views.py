@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, update_session_auth_hash
@@ -5,6 +6,7 @@ from django.contrib import messages as django_messages
 from django.contrib.auth.decorators import login_required
 from .models import Chat, ChatMember, Message
 from django.contrib.auth.forms import PasswordChangeForm
+from django.utils.safestring import mark_safe
 
 from advisingwebsiteapp.models import User
 from .scraptranscript import parse_transcript
@@ -171,5 +173,9 @@ def change_password(request):
 def index(request):
     return render(request, 'chat/index.html')
 
+@login_required
 def room(request, room_name):
-    return render(request, "chat/room.html", {"room_name": room_name})
+    return render(request, "chat/room.html", {
+        "room_name_json": mark_safe(json.dumps(room_name)),
+        "email": mark_safe(json.dumps(request.user.email))
+    })
