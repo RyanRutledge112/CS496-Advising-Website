@@ -13,6 +13,6 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'), #profle page route
     path('update_profile/', views.update_profile, name='update_profile'), #Update profile
     path('changePassword/', views.change_password, name='changePassword'), #change password
-    path('indextest', views.index, name='index'), #testing purposes
+    path('chat', views.index, name='index'), #testing purposes
     path('chat/<str:room_name>/', views.room, name="room"), #chat room
 ]
