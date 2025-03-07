@@ -90,8 +90,10 @@ class Message(models.Model):
 
 class Degree(models.Model):
     degree_name = models.CharField(max_length=255)
+    degree_number = models.CharField(max_length=255)
     concentration = models.CharField(max_length=255)
     hours_needed = models.IntegerField()
+    is_major = models.BooleanField()
 
     def __str__(self):
         return f'{self.degree_name} {self.concentration}'.strip()
