@@ -22,18 +22,18 @@ class CustomUserManager(UserManager):
     def create_user(self, email=None, first_name=None, last_name=None, password=None, is_student=None, is_advisor=None, student_id=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
-        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, student_id=None, **extra_fields)
+        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, student_id=student_id, **extra_fields)
     
     def create_superuser(self, email=None, first_name=None, last_name=None, password=None, is_student=None, is_advisor=None, student_id=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, student_id=None, **extra_fields)
+        return self._create_user(email, first_name, last_name, password, is_student, is_advisor, student_id=student_id, **extra_fields)
     
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(blank=True, default='', unique=True)
     first_name = models.CharField(max_length=255, blank=True, default='')
     last_name = models.CharField(max_length=255, blank=True, default='')
-    student_id = models.IntegerField(null=True)
+    student_id = models.IntegerField(unique=True)
 
     is_student = models.BooleanField(default=True)
     is_advisor = models.BooleanField(default=False)

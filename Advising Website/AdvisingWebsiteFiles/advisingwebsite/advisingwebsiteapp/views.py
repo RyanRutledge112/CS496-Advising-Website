@@ -8,9 +8,10 @@ from .models import Chat, ChatMember, Message
 from django.contrib.auth.forms import PasswordChangeForm
 from django.utils.safestring import mark_safe
 
-from advisingwebsiteapp.models import User
+from advisingwebsiteapp.models import User, Degree
 from .scraptranscript import parse_transcript
 import os
+import re
 
 def home(request):
     return render(request, 'home.html', {})
@@ -34,21 +35,54 @@ def register(request):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         password = request.POST.get('password')
+        student_id = request.POST.get('student_id')
+        major = request.POST.get('major')
+        major_number = request.POST.get('major_number')
+        minor = request.POST.get('minor', '')
+        minor_number = request.POST.get('minor_number', '')
+        concentration = request.POST.get('concentration', '')
+
+        # Combine major and minor into degree_name, and their numbers into degree_number
+        degree_name = f"Major: {major}, Minor: {minor or 'None'}"
+        degree_number = f"Major Number: {major_number}, Minor Number: {minor_number or 'None'}"
 
         # Set default values for is_student and is_advisor
         is_student = True  # Default to True (most users are students)
         is_advisor = False  # Default to False (most users are not advisors)
 
-        # Check if the user already exists
+        # Password validation
+        password_regex = re.compile(r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{9,}$')
+        if not password_regex.match(password):
+            django_messages.error(request, "Password must be at least 9 characters long, include an uppercase letter, "
+            "a number, and a special character.")
+            return redirect('register')
+
+        # Check if email already exists
         if User.objects.filter(email=email).exists():
             django_messages.error(request, "This email is already registered.")
+            return redirect('register')
+        
+        #check if student_id already exists
+        if User.objects.filter(student_id=student_id).exists():
+            django_messages.error(request, "This student id is already registered.")
             return redirect('register')
 
         # Create a new user
         user = User.objects.create_user(email=email, first_name=first_name, 
                                         last_name=last_name, password=password,
-                                        is_student=is_student, is_advisor=is_advisor)
+                                        is_student=is_student, is_advisor=is_advisor,
+                                        student_id=student_id)
         user.save()
+
+        # Create a new Degree object based on the degree_name and degree_number
+        degree = Degree.objects.create(
+            degree_name=degree_name,
+            degree_number=degree_number,
+            concentration=concentration, 
+            hours_needed=120,  
+            is_major= True  
+        ) 
+        degree.save()
 
         # Log the user in after registration
         login(request, user)
