@@ -78,7 +78,7 @@
     <div class="content">
       <div class="contact-profile">
         <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
-        <p>{{ email }}</p>
+        <p>{{ email|slice:"1:-1" }}</p>
         <div class="social-media">
           <i class="fa fa-facebook" aria-hidden="true"></i>
           <i class="fa fa-twitter" aria-hidden="true"></i>
@@ -114,6 +114,7 @@
 <script>
     var roomName = {{ room_name_json }};
     var email = {{ email }};
+    console.log(email)
 
     var chatSocket = new ReconnectingWebSocket(
         'ws://' + window.location.host +
@@ -160,21 +161,34 @@
         chatSocket.send(JSON.stringify({'command': 'fetch_messages' }));
     };
 
+    var lastTimestamp = new Date();
     function createMessage(data) {
       var author = data['author'];
+
+      var timestamp = new Date(data['timestamp'])
+
+      var timeDiff = lastTimestamp ? Math.floor((lastTimestamp - timestamp) / 60000) : 0;
+      var timeText = timeDiff > 0 ? `${timeDiff} min ago` : "Just now";
+
       var msgListTag = document.createElement('li');
       var imgTag = document.createElement('img');
-      var pTag = document.createElement('p');
-      pTag.textContent = data.content;
+      var messageContainer = document.createElement('div');
+      var messageText = document.createElement('p');
+
+      messageText.textContent = data.content;
+      messageText.innerHTML += '<br> <small>' + timeText + "</small>";
       imgTag.src = 'http://emilcarlsson.se/assets/mikeross.png';
+
+      messageContainer.appendChild(messageText);
       
       if (author === email) {
         msgListTag.className = 'sent';
       } else {
         msgListTag.className = 'replies';
       }
+
       msgListTag.appendChild(imgTag);
-      msgListTag.appendChild(pTag);
+      msgListTag.appendChild(messageContainer);
       document.querySelector('#chat-log').appendChild(msgListTag);
     };
 
