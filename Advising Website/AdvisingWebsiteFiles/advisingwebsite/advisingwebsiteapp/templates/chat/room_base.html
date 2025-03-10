@@ -21,8 +21,8 @@
     <div id="sidepanel">
       <div id="profile">
         <div class="wrap">
-          <img id="profile-img" src="http://emilcarlsson.se/assets/mikeross.png" class="offline" alt="" />
-          <p>Mike Ross</p>
+          <img id="profile-img" src="https://www.wku.edu/marketingandcommunications/images/big-red2c.jpg" class="offline" alt="" />
+          <p>Big Red!</p>
           {% comment %}
           <i class="fa fa-chevron-down expand-button" aria-hidden="true"></i>
           <div id="status-options">
@@ -70,22 +70,19 @@
     </div>
     <div class="content">
       <div class="contact-profile">
-        <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
-        <p>{{ email|slice:"1:-1" }}</p>
-        <div class="social-media">
-          <i class="fa fa-envelope" aria-hidden="true"></i>
-        </div>
+        <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
+        <p>WKU Advising Messages</p>
       </div>
       <div class="messages">
         <ul id="chat-log">
-            {% comment %}<li class="sent">
-            <img src="http://emilcarlsson.se/assets/mikeross.png" alt="" />
-            <p>How the hell am I supposed to get a jury to believe you when I am not even sure that I do?!</p>
+            <li class="sent">
+            <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
+            <p>Welcome to the WKU Advising Messaging System!</p>
           </li>
           <li class="replies">
-            <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
-            <p>When you're backed against the wall, break the god damn thing down.</p>
-          </li> {% endcomment %}
+            <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
+            <p>Click on one of the contacts on the left scroll bar or add a new contact to start!</p>
+          </li>
         </ul>
       </div>
       <div class="message-input">
@@ -103,8 +100,6 @@
 <script src="{% static 'main.js' %}"></script>
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
-    var roomName = {{ room_name_json }};
-    var email = {{ email }};
     console.log(email)
 
     var chatSocket = new ReconnectingWebSocket(
@@ -131,7 +126,7 @@
     };
 
     document.querySelector('#chat-message-input').onkeyup = function(e) {
-        if (e.keyCode === 13) {  // enter, return
+        if (e.keyCode === 13) {
             document.querySelector('#chat-message-submit').click();
         }
     };
@@ -200,8 +195,13 @@
 
     document.addEventListener("DOMContentLoaded", function() {
       let savedActiveContact = localStorage.getItem("activeContact");
+      let currentPath = window.location.pathname;
 
-      if (savedActiveContact) {
+      if (currentPath === "/chat/") {
+          document.querySelectorAll('.contact').forEach(contact => {
+              contact.classList.remove("active");
+          });
+      } else if (savedActiveContact) {
           document.querySelectorAll('.contact').forEach(contact => {
               let fullName = contact.querySelector('.name').textContent.trim();
               let firstName = fullName.split(" ")[0];
@@ -210,8 +210,6 @@
                   contact.classList.add("active");
               }
           });
-        } else {
-          window.location.href = "/chat/";
         }
     });
 

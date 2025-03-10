@@ -203,13 +203,24 @@ def change_password(request):
     else:
         form = PasswordChangeForm(request.user)
         return render(request, 'changePassword.html', {'form': form})
-    
-def index(request):
-    return render(request, 'chat/index.html')
+
+@login_required
+def chathome(request):
+    contacts = [
+        {"name": "Louis Litt", "image_url": "http://emilcarlsson.se/assets/louislitt.png", "last_message": "You just got LITT up, Mike."},
+        {"name": "Harvey Specter", "image_url": "http://emilcarlsson.se/assets/harveyspecter.png", "last_message": "Wrong. You take the gun, or you pull out a bigger one."},
+    ]
+
+    return render(request, 'chat/room_base.html', {"contacts": contacts})
 
 @login_required
 def room(request, room_name):
+    contacts = [
+        {"name": "Louis Litt", "image_url": "http://emilcarlsson.se/assets/louislitt.png", "last_message": "You just got LITT up, Mike."},
+        {"name": "Harvey Specter", "image_url": "http://emilcarlsson.se/assets/harveyspecter.png", "last_message": "Wrong. You take the gun, or you pull out a bigger one."},
+    ]
     return render(request, "chat/room.html", {
         "room_name_json": mark_safe(json.dumps(room_name)),
-        "email": mark_safe(json.dumps(request.user.email))
+        "email": mark_safe(json.dumps(request.user.email)),
+        "contacts": contacts
     })
