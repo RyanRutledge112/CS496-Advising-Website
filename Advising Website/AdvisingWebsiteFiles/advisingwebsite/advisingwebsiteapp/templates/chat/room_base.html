@@ -65,7 +65,7 @@
     </div>
       <div id="bottom-bar">
         <button id="addcontact"><i class="fa fa-user-plus fa-fw" aria-hidden="true"></i> <span>Add contact</span></button>
-        <button id="settings"><i class="fa fa-home fa-fw" aria-hidden="true"></i> <span>Home</span></button>
+        <button id="home" onclick="window.location.href='{% url 'home' %}'"><i class="fa fa-home fa-fw" aria-hidden="true"></i> <span>Home</span></button>
       </div>
     </div>
     <div class="content">
@@ -100,84 +100,6 @@
 <script src="{% static 'main.js' %}"></script>
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
-    console.log(email)
-
-    var chatSocket = new ReconnectingWebSocket(
-        'ws://' + window.location.host +
-        '/ws/chat/' + roomName + '/');
-
-    chatSocket.onopen = function(e) {
-        fetchMessages();
-    };
-
-    chatSocket.onmessage = function(e) {
-        var data = JSON.parse(e.data);
-        if (data['command'] === 'messages') {
-          for (let i=0; i<data['messages'].length; i++) {
-            createMessage(data['messages'][i]);
-          }
-        } else if (data['command'] === 'new_message'){
-          createMessage(data['message']);
-        }
-    };
-
-    chatSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
-    };
-
-    document.querySelector('#chat-message-input').onkeyup = function(e) {
-        if (e.keyCode === 13) {
-            document.querySelector('#chat-message-submit').click();
-        }
-    };
-
-    document.querySelector('#chat-message-submit').onclick = function(e) {
-        var messageInputDom = document.getElementById('chat-message-input');
-        var message = messageInputDom.value;
-        chatSocket.send(JSON.stringify({
-            'command': 'new_message',
-            'message': message,
-            'from': email
-        }));
-
-        messageInputDom.value = '';
-    };
-
-    function fetchMessages() {
-        chatSocket.send(JSON.stringify({'command': 'fetch_messages' }));
-    };
-
-    var lastTimestamp = new Date();
-    function createMessage(data) {
-      var author = data['author'];
-
-      var timestamp = new Date(data['timestamp'])
-
-      var timeDiff = lastTimestamp ? Math.floor((lastTimestamp - timestamp) / 60000) : 0;
-      var timeText = timeDiff > 0 ? `${timeDiff} min ago` : "Just now";
-
-      var msgListTag = document.createElement('li');
-      var imgTag = document.createElement('img');
-      var messageContainer = document.createElement('div');
-      var messageText = document.createElement('p');
-
-      messageText.textContent = data.content;
-      messageText.innerHTML += '<br> <small>' + timeText + "</small>";
-      imgTag.src = 'http://emilcarlsson.se/assets/mikeross.png';
-
-      messageContainer.appendChild(messageText);
-      
-      if (author === email) {
-        msgListTag.className = 'sent';
-      } else {
-        msgListTag.className = 'replies';
-      }
-
-      msgListTag.appendChild(imgTag);
-      msgListTag.appendChild(messageContainer);
-      document.querySelector('#chat-log').appendChild(msgListTag);
-    };
-
     function setActiveContact(clickedContact) {
       document.querySelectorAll('.contact').forEach(contact => {
         contact.classList.remove('active');
@@ -212,7 +134,6 @@
           });
         }
     });
-
 </script>
 </body>
 
