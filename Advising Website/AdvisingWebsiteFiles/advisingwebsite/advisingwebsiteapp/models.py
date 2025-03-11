@@ -33,7 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(blank=True, default='', unique=True)
     first_name = models.CharField(max_length=255, blank=True, default='')
     last_name = models.CharField(max_length=255, blank=True, default='')
-    student_id = models.IntegerField(unique=True)
+    student_id = models.IntegerField(unique=True, null=True)
 
     is_student = models.BooleanField(default=True)
     is_advisor = models.BooleanField(default=False)
@@ -89,14 +89,21 @@ class Message(models.Model):
         return f'{self.sent_by_member.user.get_full_name}\n{self.message_content}'.strip()
 
 class Degree(models.Model):
+    DEGREE_TYPE_CHOICES = [
+        (1, "Major"),
+        (2, "Minor"),
+        (3, "Certificate"),
+    ]
+
     degree_name = models.CharField(max_length=255)
     degree_number = models.CharField(max_length=255)
     concentration = models.CharField(max_length=255)
     hours_needed = models.IntegerField()
-    is_major = models.BooleanField()
+    degree_type = models.IntegerField(choices=DEGREE_TYPE_CHOICES)
 
     def __str__(self):
-        return f'{self.degree_name} {self.concentration}'.strip()
+        degree_type_display = dict(self.DEGREE_TYPE_CHOICES).get(self.degree_type, "Unknown")
+        return f"{self.degree_name} {self.concentration} {degree_type_display}".strip()
 
 class Course(models.Model):
     course_name = models.CharField(max_length=255)
