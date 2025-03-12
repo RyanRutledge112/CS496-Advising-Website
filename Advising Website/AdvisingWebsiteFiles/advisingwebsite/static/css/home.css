@@ -1,0 +1,32 @@
+.container {
+    background: url('/static/images/WKU_center_Campus.jpg');
+    background-size: cover;
+    background-position: center;
+    width: 100vw;
+    max-width: 100%;
+    height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+  
+.home-page h1 {
+    background: rgba(25, 25, 25, 0.7);
+    padding: 25px;
+    border-radius: 2px;
+    font-family: sans-serif;
+}
+
+.home-page p {
+    background: rgba(25, 25, 25, 0.7);
+    padding: 25px;
+    border-radius: 2px;
+    display: inline-block;
+    font-family: sans-serif;
+}
+
+.home-page a {
+    border-radius: 2px;
+    font-family: sans-serif;
+}
