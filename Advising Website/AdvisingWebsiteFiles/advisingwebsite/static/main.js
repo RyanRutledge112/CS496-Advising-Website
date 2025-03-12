@@ -55,5 +55,5 @@ $("#status-options ul li").click(function() {
 // });
 
 function showMajorNumberInfo() {
-    alert("You can find your major number on Degree Works or the WKU website. It's 3-4 numbers and some have a letter at the end.");
+    alert("You can find all major, minor, and certficate numbers on your Degree Works or the WKU website. It's 3-4 numbers and some have a letter at the end.");
 }

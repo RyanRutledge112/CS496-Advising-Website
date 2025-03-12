@@ -41,10 +41,8 @@ def register(request):
         minor = request.POST.get('minor', '')
         minor_number = request.POST.get('minor_number', '')
         concentration = request.POST.get('concentration', '')
-
-        # Combine major and minor into degree_name, and their numbers into degree_number
-        degree_name = f"Major: {major}, Minor: {minor or 'None'}"
-        degree_number = f"Major Number: {major_number}, Minor Number: {minor_number or 'None'}"
+        certificate = request.POST.get('certificate', '')
+        certificate_number = request.POST.get('certificate_number', '')
 
         # Set default values for is_student and is_advisor
         is_student = True  # Default to True (most users are students)
@@ -74,14 +72,32 @@ def register(request):
                                         student_id=student_id)
         user.save()
 
-        # Create a new Degree object based on the degree_name and degree_number
+        # Create Degree record 
         degree = Degree.objects.create(
-            degree_name=degree_name,
-            degree_number=degree_number,
+            degree_name=major,
+            degree_number=major_number,
             concentration=concentration, 
             hours_needed=120,  
-            is_major= True  
+            degree_type=1  
         ) 
+
+        if minor:
+            degree = Degree.objects.create(
+                degree_name=minor,
+                degree_number=minor_number,
+                concentration=concentration,
+                hours_needed=21,
+                degree_type=2
+            )
+
+        if certificate:
+            degree = Degree.objects.create(
+                    degree_name=certificate,
+                    degree_number=certificate_number,
+                    concentration=certificate,
+                    hours_needed=12,
+                    degree_type=3
+            )
         degree.save()
 
         # Log the user in after registration
