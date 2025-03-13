@@ -1,3 +1,8 @@
+h1, h2, h3, p, a {
+    font-family: 'sans-serif', sans-serif;
+}
+
+/*Home Page Styling*/
 .container {
     background: url('/static/images/WKU_center_Campus.jpg');
     background-size: cover;
@@ -23,10 +28,44 @@
     padding: 25px;
     border-radius: 2px;
     display: inline-block;
-    font-family: sans-serif;
 }
 
 .home-page a {
     border-radius: 2px;
-    font-family: sans-serif;
+}
+
+/*Login Page Styling*/
+body.login .login-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 30px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.3);
+}
+
+body.login main.container-fluid { /* Only style the main content, not the navbar */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Register Page Styling */
+body.register .register-container {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 50%;
+    padding: 50px 30px 30px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.3);
+}
+
+body.register main.container-fluid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
