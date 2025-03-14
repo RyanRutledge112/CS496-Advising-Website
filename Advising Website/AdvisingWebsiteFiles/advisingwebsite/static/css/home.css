@@ -4,7 +4,7 @@ h1, h2, h3, p, a {
 
 /*Home Page Styling*/
 .container {
-    background: url('/static/images/WKU_center_Campus.jpg');
+    background: url('/static/css/images/WKU_Center_Campus.jpg');
     background-size: cover;
     background-position: center;
     width: 100vw;
@@ -13,6 +13,7 @@ h1, h2, h3, p, a {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
     color: white;
 }
   
