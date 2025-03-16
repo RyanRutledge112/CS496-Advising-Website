@@ -14,5 +14,5 @@ urlpatterns = [
     path('update_profile/', views.update_profile, name='update_profile'), #Update profile
     path('changePassword/', views.change_password, name='changePassword'), #change password
     path('chat/', views.chathome, name='chatHome'), #chat home
-    path('chat/<str:room_name>/', views.room, name="room"), #chat room
+    path('chat/<int:chat_id>/', views.room, name="room"), #chat room
 ]

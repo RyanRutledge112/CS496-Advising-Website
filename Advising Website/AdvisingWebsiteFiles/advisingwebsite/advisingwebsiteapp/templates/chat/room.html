@@ -51,7 +51,7 @@
       <div id="chats">
         <ul>
             {% for chat in chats %}
-            <li class="chat {% if chat.is_active %}active{% endif %}" onclick="setActiveChat(this)">
+            <li class="chat {% if chat.is_active %}active{% endif %}" data-chat-id="{{ chat.chat_id }}" onclick="setActiveChat(this)">
                 <div class="wrap">
                     <img src="{{ chat.image_url }}" alt="{{ chat.name }}" />
                     <div class="meta">
@@ -103,14 +103,13 @@
 <script src="{% static 'main.js' %}"></script>
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
-    var roomName = {{ room_name_json }};
     var email = {{ email }};
     var chat_id = {{ chat_id }};
     console.log(email)
 
     var chatSocket = new ReconnectingWebSocket(
         'ws://' + window.location.host +
-        '/ws/chat/' + roomName + '/');
+        '/ws/chat/' + chat_id + '/');
 
     chatSocket.onopen = function(e) {
         fetchMessages();
@@ -189,18 +188,21 @@
     };
 
     function setActiveChat(clickedChat) {
-      document.querySelectorAll('.chat').forEach(chat => {
-        chat.classList.remove('active');
-      });
+        let chat_id = clickedChat.getAttribute('data-chat-id');
+        let currentActiveChat = localStorage.getItem("activeChat");
 
-      clickedChat.classList.add('active');
+        if (String(chat_id) === String(currentActiveChat)) {
+            localStorage.removeItem("activeChat");
+            window.location.href = "/chat/";
+        } else {
+            document.querySelectorAll('.chat').forEach(chat => {
+                chat.classList.remove('active');
+            });
 
-      let username = clickedChat.querySelector('.name').textContent.trim();
-      let firstName = username.split(" ")[0];
-
-      localStorage.setItem("activeChat", firstName)
-
-      window.location.href = `/chat/${firstName}`;
+            clickedChat.classList.add('active');
+            localStorage.setItem("activeChat", chat_id);
+            window.location.href = `/chat/${chat_id}`;
+        }
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -208,15 +210,11 @@
 
       if (savedActiveChat) {
           document.querySelectorAll('.chat').forEach(chat => {
-              let fullName = chat.querySelector('.name').textContent.trim();
-              let firstName = fullName.split(" ")[0];
-
-              if (firstName === savedActiveChat) {
+              let chat_id = chat.getAttribute('data-chat-id');
+              if (String(chat_id) === String(savedActiveChat)) {
                 chat.classList.add("active");
               }
           });
-        } else {
-          window.location.href = "/chat/";
         }
     });
 

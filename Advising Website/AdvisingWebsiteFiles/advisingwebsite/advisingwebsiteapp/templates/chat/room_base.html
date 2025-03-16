@@ -51,7 +51,7 @@
       <div id="chats">
         <ul>
             {% for chat in chats %}
-            <li class="chat {% if chat.is_active %}active{% endif %}" onclick="setActiveChat(this)">
+            <li class="chat {% if chat.is_active %}active{% endif %}" data-chat-id="{{ chat.chat_id }}" onclick="setActiveChat(this)">
                 <div class="wrap">
                     <img src="{{ chat.image_url }}" alt="{{ chat.name }}" />
                     <div class="meta">
@@ -101,18 +101,16 @@
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
     function setActiveChat(clickedChat) {
-      document.querySelectorAll('.chat').forEach(contact => {
-        contact.classList.remove('active');
+      document.querySelectorAll('.chat').forEach(chat => {
+        chat.classList.remove('active');
       });
 
       clickedChat.classList.add('active');
 
-      let username = clickedChat.querySelector('.name').textContent.trim();
-      let firstName = username.split(" ")[0];
+      let chat_id = clickedChat.getAttribute('data-chat-id');
+      localStorage.setItem("activeChat", chat_id)
 
-      localStorage.setItem("activeChat", firstName)
-
-      window.location.href = `/chat/${firstName}`;
+      window.location.href = `/chat/${chat_id}`;
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -125,10 +123,9 @@
           });
       } else if (savedActiveChat) {
           document.querySelectorAll('.chat').forEach(chat => {
-              let fullName = chat.querySelector('.name').textContent.trim();
-              let firstName = fullName.split(" ")[0];
+              let chat_id = chat.getAttribute('data-chat-id')
 
-              if (firstName === savedActiveChat) {
+              if (chat_id === savedActiveChat) {
                 chat.classList.add("active");
               }
           });

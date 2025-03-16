@@ -239,7 +239,7 @@ def chathome(request):
     return render(request, 'chat/room_base.html', {"chats": chats})
 
 @login_required
-def room(request, room_name):
+def room(request, chat_id):
     user = request.user
     user_chats = ChatMember.objects.filter(user=user).select_related("chat")
 
@@ -247,17 +247,15 @@ def room(request, room_name):
         {
             "name": chat_member.chat.chat_name,
             "image_url": "http://emilcarlsson.se/assets/louislitt.png",
+            "chat_id": chat_member.chat.id,
             "last_message": chat_member.chat.chat_messages.order_by('-date_sent').first().message_content
             if chat_member.chat.chat_messages.exists() else "No messages yet."
         }
         for chat_member in user_chats
     ]
-
-    chat_id = user_chats.first().chat.id if user_chats.exists() else None
     
     return render(request, "chat/room.html", {
-        "room_name_json": mark_safe(json.dumps(room_name)),
-        "email": mark_safe(json.dumps(request.user.email)),
         'chat_id': chat_id,
+        "email": mark_safe(json.dumps(request.user.email)),
         "chats": chats
     })
