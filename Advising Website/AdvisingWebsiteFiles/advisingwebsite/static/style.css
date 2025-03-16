@@ -322,63 +322,63 @@ body {
 #frame #sidepanel #search input:-moz-placeholder {
   color: #f5f5f5;
 }
-#frame #sidepanel #contacts {
+#frame #sidepanel #chats {
   height: calc(100% - 177px);
   overflow-y: scroll;
   overflow-x: hidden;
 }
 @media screen and (max-width: 735px) {
-  #frame #sidepanel #contacts {
+  #frame #sidepanel #chats {
     height: calc(100% - 149px);
     overflow-y: scroll;
     overflow-x: hidden;
   }
-  #frame #sidepanel #contacts::-webkit-scrollbar {
+  #frame #sidepanel #chats::-webkit-scrollbar {
     display: none;
   }
 }
-#frame #sidepanel #contacts.expanded {
+#frame #sidepanel #chats.expanded {
   height: calc(100% - 334px);
 }
-#frame #sidepanel #contacts::-webkit-scrollbar {
+#frame #sidepanel #chats::-webkit-scrollbar {
   width: 8px;
   background: #B01E24;
 }
-#frame #sidepanel #contacts::-webkit-scrollbar-thumb {
+#frame #sidepanel #chats::-webkit-scrollbar-thumb {
   background-color: #ffffff;
 }
-#frame #sidepanel #contacts ul li.contact {
+#frame #sidepanel #chats ul li.chat {
   position: relative;
   padding: 10px 0 15px 0;
   font-size: 0.9em;
   cursor: pointer;
 }
 @media screen and (max-width: 735px) {
-  #frame #sidepanel #contacts ul li.contact {
+  #frame #sidepanel #chats ul li.chat {
     padding: 6px 0 66px 8px;
   }
 }
-#frame #sidepanel #contacts ul li.contact:hover {
+#frame #sidepanel #chats ul li.chat:hover {
   background: #af2c31;
 }
-#frame #sidepanel #contacts ul li.contact.active {
+#frame #sidepanel #chats ul li.chat.active {
   background: #9A1A20;
   border-right: 5px solid #f53f45;
 }
-#frame #sidepanel #contacts ul li.contact.active span.contact-status {
+#frame #sidepanel #chats ul li.chat.active span.chats-status {
   border: 2px solid #32465a !important;
 }
-#frame #sidepanel #contacts ul li.contact .wrap {
+#frame #sidepanel #chats ul li.chat .wrap {
   width: 88%;
   margin: 0 auto;
   position: relative;
 }
 @media screen and (max-width: 735px) {
-  #frame #sidepanel #contacts ul li.contact .wrap {
+  #frame #sidepanel #chats ul li.chat .wrap {
     width: 100%;
   }
 }
-#frame #sidepanel #contacts ul li.contact .wrap span {
+#frame #sidepanel #chats ul li.chat .wrap span {
   position: absolute;
   left: 0;
   margin: -2px 0 0 -2px;
@@ -388,38 +388,38 @@ body {
   border: 2px solid #2c3e50;
   background: #95a5a6;
 }
-#frame #sidepanel #contacts ul li.contact .wrap span.online {
+#frame #sidepanel #chats ul li.chat .wrap span.online {
   background: #2ecc71;
 }
-#frame #sidepanel #contacts ul li.contact .wrap span.away {
+#frame #sidepanel #chats ul li.chat .wrap span.away {
   background: #f1c40f;
 }
-#frame #sidepanel #contacts ul li.contact .wrap span.busy {
+#frame #sidepanel #chats ul li.chat .wrap span.busy {
   background: #e74c3c;
 }
-#frame #sidepanel #contacts ul li.contact .wrap img {
+#frame #sidepanel #chats ul li.chat .wrap img {
   width: 50px;
   border-radius: 50%;
   float: left;
   margin-right: 10px;
 }
 @media screen and (max-width: 735px) {
-  #frame #sidepanel #contacts ul li.contact .wrap img {
+  #frame #sidepanel #chats ul li.chat .wrap img {
     margin-right: 0px;
   }
 }
-#frame #sidepanel #contacts ul li.contact .wrap .meta {
+#frame #sidepanel #chats ul li.chat .wrap .meta {
   padding: 5px 0 0 0;
 }
 @media screen and (max-width: 735px) {
-  #frame #sidepanel #contacts ul li.contact .wrap .meta {
+  #frame #sidepanel #chats ul li.chat .wrap .meta {
     display: none;
   }
 }
-#frame #sidepanel #contacts ul li.contact .wrap .meta .name {
+#frame #sidepanel #chats ul li.chat .wrap .meta .name {
   font-weight: 600;
 }
-#frame #sidepanel #contacts ul li.contact .wrap .meta .preview {
+#frame #sidepanel #chats ul li.chat .wrap .meta .preview {
   margin: 5px 0 0 0;
   padding: 0 0 1px;
   font-weight: 400;
@@ -431,7 +431,7 @@ body {
   -webkit-transition: 1s all ease;
   transition: 1s all ease;
 }
-#frame #sidepanel #contacts ul li.contact .wrap .meta .preview span {
+#frame #sidepanel #chats ul li.chat .wrap .meta .preview span {
   position: initial;
   border-radius: initial;
   background: none;
@@ -510,33 +510,33 @@ body {
     width: calc(100% - 340px);
   }
 }
-#frame .content .contact-profile {
+#frame .content .chat-profile {
   width: 100%;
   height: 80px;
   line-height: 80px;
   background: #f5f5f5;
 }
-#frame .content .contact-profile img {
+#frame .content .chat-profile img {
   width: 60px;
   border-radius: 50%;
   float: left;
   margin: 9px 12px 0 9px;
 }
-#frame .content .contact-profile p {
+#frame .content .chat-profile p {
   float: left;
   font-size: 18px;
 }
-#frame .content .contact-profile .social-media {
+#frame .content .chat-profile .social-media {
   float: right;
 }
-#frame .content .contact-profile .social-media i {
+#frame .content .chat-profile .social-media i {
   margin-left: 14px;
   cursor: pointer;
 }
-#frame .content .contact-profile .social-media i:nth-last-child(1) {
+#frame .content .chat-profile .social-media i:nth-last-child(1) {
   margin-right: 20px;
 }
-#frame .content .contact-profile .social-media i:hover {
+#frame .content .chat-profile .social-media i:hover {
   color: #435f7a;
 }
 #frame .content .messages {

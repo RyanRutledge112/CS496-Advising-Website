@@ -2,15 +2,15 @@ from django.contrib.auth import get_user_model
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import json
-from advisingwebsiteapp.models import SimpleMessage
+from advisingwebsiteapp.models import Message, Chat
 
 User = get_user_model()
 
 class ChatConsumer(WebsocketConsumer):
 
     def fetch_messages(self, data):
-        message_instance = SimpleMessage()
-        messages = message_instance.last_10_messages()
+        chat = Chat.objects.filter(id=data['chat_id']).first()
+        messages = chat.last_10_messages()
         content = {
             'command': 'messages',
             'messages': self.messages_to_json(messages)
@@ -19,10 +19,12 @@ class ChatConsumer(WebsocketConsumer):
 
     def new_message(self, data):
         author = data['from']
-        author_user = User.objects.filter(email=author)[0]
-        message = SimpleMessage.objects.create(
-            author=author_user, 
-            content=data['message'])
+        user = User.objects.filter(email=author).first()
+        chat_member = user.joined_chats.filter(chat__id=data['chat_id']).first()
+        message = Message.objects.create(
+            sent_by_member=chat_member,
+            chat=Chat.objects.filter(id=data['chat_id']).first(),
+            message_content=data['message'])
         content = {
             'command': 'new_message',
             'message': self.message_to_json(message)
@@ -37,9 +39,9 @@ class ChatConsumer(WebsocketConsumer):
 
     def message_to_json(self, message):
         return {
-            'author': message.author.email.strip('"'),
-            'content': message.content,
-            'timestamp': str(message.timestamp)
+            'author': message.sent_by_member.user.email.strip('"'),
+            'content': message.message_content,
+            'date_sent': str(message.date_sent)
         }
 
     commands = {

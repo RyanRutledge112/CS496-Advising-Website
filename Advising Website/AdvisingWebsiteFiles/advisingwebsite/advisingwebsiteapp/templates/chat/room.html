@@ -46,17 +46,17 @@
       </div>
       <div id="search">
         <label for=""><i class="fa fa-search" aria-hidden="true"></i></label>
-        <input type="text" placeholder="Search contacts..." />
+        <input type="text" placeholder="Search chats..." />
       </div>
-      <div id="contacts">
+      <div id="chats">
         <ul>
-            {% for contact in contacts %}
-            <li class="contact {% if contact.is_active %}active{% endif %}" onclick="setActiveContact(this)">
+            {% for chat in chats %}
+            <li class="chat {% if chat.is_active %}active{% endif %}" onclick="setActiveChat(this)">
                 <div class="wrap">
-                    <img src="{{ contact.image_url }}" alt="{{ contact.name }}" />
+                    <img src="{{ chat.image_url }}" alt="{{ chat.name }}" />
                     <div class="meta">
-                        <p class="name">{{ contact.name }}</p>
-                        <p class="preview">{{ contact.last_message }}</p>
+                        <p class="name">{{ chat.name }}</p>
+                        <p class="preview">{{ chat.last_message }}</p>
                     </div>
                 </div>
             </li>
@@ -64,12 +64,12 @@
         </ul>
     </div>
       <div id="bottom-bar">
-        <button id="addcontact"><i class="fa fa-user-plus fa-fw" aria-hidden="true"></i> <span>Add contact</span></button>
+        <button id="addchat"><i class="fa fa-user-plus fa-fw" aria-hidden="true"></i> <span>Add chat</span></button>
         <button id="home" onclick="window.location.href='{% url 'home' %}'"><i class="fa fa-home fa-fw" aria-hidden="true"></i> <span>Home</span></button>
       </div>
     </div>
     <div class="content">
-      <div class="contact-profile">
+      <div class="chat-profile">
         <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
         <p>{{ email|slice:"1:-1" }}</p>
         <div class="social-media">
@@ -105,6 +105,7 @@
 <script>
     var roomName = {{ room_name_json }};
     var email = {{ email }};
+    var chat_id = {{ chat_id }};
     console.log(email)
 
     var chatSocket = new ReconnectingWebSocket(
@@ -142,21 +143,25 @@
         chatSocket.send(JSON.stringify({
             'command': 'new_message',
             'message': message,
-            'from': email
+            'from': email,
+            'chat_id': chat_id,
         }));
 
         messageInputDom.value = '';
     };
 
     function fetchMessages() {
-        chatSocket.send(JSON.stringify({'command': 'fetch_messages' }));
+        chatSocket.send(JSON.stringify({
+          'command': 'fetch_messages',
+          'chat_id': chat_id
+        }));
     };
 
     var lastTimestamp = new Date();
     function createMessage(data) {
       var author = data['author'];
 
-      var timestamp = new Date(data['timestamp'])
+      var timestamp = new Date(data['date_sent'])
 
       var timeDiff = lastTimestamp ? Math.floor((lastTimestamp - timestamp) / 60000) : 0;
       var timeText = timeDiff > 0 ? `${timeDiff} min ago` : "Just now";
@@ -183,31 +188,31 @@
       document.querySelector('#chat-log').appendChild(msgListTag);
     };
 
-    function setActiveContact(clickedContact) {
-      document.querySelectorAll('.contact').forEach(contact => {
-        contact.classList.remove('active');
+    function setActiveChat(clickedChat) {
+      document.querySelectorAll('.chat').forEach(chat => {
+        chat.classList.remove('active');
       });
 
-      clickedContact.classList.add('active');
+      clickedChat.classList.add('active');
 
-      let username = clickedContact.querySelector('.name').textContent.trim();
+      let username = clickedChat.querySelector('.name').textContent.trim();
       let firstName = username.split(" ")[0];
 
-      localStorage.setItem("activeContact", firstName)
+      localStorage.setItem("activeChat", firstName)
 
       window.location.href = `/chat/${firstName}`;
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-      let savedActiveContact = localStorage.getItem("activeContact");
+      let savedActiveChat= localStorage.getItem("activeChat");
 
-      if (savedActiveContact) {
-          document.querySelectorAll('.contact').forEach(contact => {
-              let fullName = contact.querySelector('.name').textContent.trim();
+      if (savedActiveChat) {
+          document.querySelectorAll('.chat').forEach(chat => {
+              let fullName = chat.querySelector('.name').textContent.trim();
               let firstName = fullName.split(" ")[0];
 
-              if (firstName === savedActiveContact) {
-                  contact.classList.add("active");
+              if (firstName === savedActiveChat) {
+                chat.classList.add("active");
               }
           });
         } else {

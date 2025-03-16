@@ -69,25 +69,28 @@ class Chat(models.Model):
 
     def __str__(self):
         return self.chat_name
+    def last_10_messages(self):
+        return self.chat_messages.order_by('-date_sent')[:10]
 
 class ChatMember(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name="joined_chats", on_delete=models.CASCADE)
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
     chat_last_viewed = models.DateTimeField(auto_now_add=True)
     chat_deleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.user.get_full_name()} is a member of the chat named {self.chat.__str__()}'.strip()
+        return f'User: {self.user.get_full_name()} | Chat: {self.chat.__str__()}'.strip()
 
 class Message(models.Model):
-    sent_by_member = models.ForeignKey(ChatMember, on_delete=models.CASCADE)
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
+    sent_by_member = models.ForeignKey(ChatMember, related_name="messages", on_delete=models.CASCADE)
+    chat = models.ForeignKey(Chat, related_name="chat_messages", on_delete=models.CASCADE)
     message_content = models.TextField()
     date_sent = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.sent_by_member.user.get_full_name}\n{self.message_content}'.strip()
+        return f'{self.sent_by_member} | {self.message_content}'.strip()
 
+#You can add more degree types if needed
 class Degree(models.Model):
     DEGREE_TYPE_CHOICES = [
         (1, "Major"),
@@ -148,15 +151,3 @@ class UserDegree(models.Model):
 
     def __str__(self):
         return f"Student {self.user_student_id.get_full_name} with a student id of {self.user_student_id.student_id} is going for a degree in {self.degree.__str__}".strip()
-
-
-class SimpleMessage(models.Model): #Testing purposes, needed for simple implementation of message system that will be more complex later
-    author = models.ForeignKey(User, related_name="author_messages",on_delete=models.CASCADE)
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.author.email
-    
-    def last_10_messages(self):
-        return SimpleMessage.objects.order_by('-timestamp').all()[:10]
