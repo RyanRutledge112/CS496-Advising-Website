@@ -1,3 +1,9 @@
+/*NavBar Styling*/
+.navbar {
+    padding-top: 13px;
+    padding-bottom: 13px;
+}
+
 h1, h2, h3, p, a {
     font-family: 'sans-serif', sans-serif;
 }
@@ -9,30 +15,48 @@ h1, h2, h3, p, a {
     background-position: center;
     width: 100vw;
     max-width: 100%;
-    height: 80vh;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     color: white;
 }
+
+/* Add the dark overlay */
+.container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3); /* Adjust opacity (0.5 = 50% dark) */
+    z-index: 1;
+}
+
+/* Ensure content appears above the overlay */
+.container * {
+    position: relative;
+    z-index: 2;
+}
   
 .home-page h1 {
-    background: rgba(25, 25, 25, 0.7);
     padding: 25px;
     border-radius: 2px;
-    font-family: sans-serif;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 70px;
+    margin-top: -10%;
 }
 
 .home-page p {
-    background: rgba(25, 25, 25, 0.7);
     padding: 25px;
     border-radius: 2px;
     display: inline-block;
 }
 
 .home-page a {
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 /*Login Page Styling*/
@@ -43,7 +67,7 @@ body.login .login-container {
     padding: 30px;
     background-color: rgb(255, 255, 255);
     border-radius: 10px;
-    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.3);
+    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.33);
 }
 
 body.login main.container-fluid { /* Only style the main content, not the navbar */
@@ -61,7 +85,7 @@ body.register .register-container {
     padding: 50px 30px 30px;
     background-color: rgb(255, 255, 255);
     border-radius: 10px;
-    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.3);
+    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.33);
 }
 
 body.register main.container-fluid {
@@ -69,4 +93,97 @@ body.register main.container-fluid {
     justify-content: center;
     align-items: center;
     height: 100vh;
+}
+
+/* Change Password Page Styling */
+body.changePassword .change-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 50px 30px 30px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.33);
+}
+
+body.changePassword main.container-fluid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'sans-serif', sans-serif;
+}
+
+.change-container button{
+    border-radius: 3px;
+}
+
+/* Upload Transcript Page Styling */
+body.uploadTranscript .upload-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 50px 30px 30px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.33);
+}
+
+body.uploadTranscript main.container-fluid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'sans-serif', sans-serif;
+}
+
+.upload-container button{
+    margin-top: 2%;
+    border-radius: 3px;
+}
+
+/* Profile Page Styling */
+body.profile .profile-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 50px 30px 30px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    box-shadow: 0px 8px 20px rgba(186, 31, 31, 0.33);
+}
+
+body.profile main.container-fluid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'sans-serif', sans-serif;
+}
+
+.profile-container h1{
+    font-family: 'sans-serif', sans-serif;
+}
+
+.profile-container button{
+    margin-bottom: 2%;
+    border-radius: 3px;
+}
+
+/*Footer Styling*/
+footer.image-credit {
+    width: 100%;
+    background-color: red; 
+    color: white;
+    text-align: center;
+    padding: 4px 0;
+    font-size: 14px;
+    position: relative; 
+    margin: 0;
+}
+
+footer.image-credit a {
+    color: white;
+    text-decoration: underline;
+}
+
+footer.image-credit a:hover {
+    color: #ffcccc; /* Lighter red when hovered */
 }
