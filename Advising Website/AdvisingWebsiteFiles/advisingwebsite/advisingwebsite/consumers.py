@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import json
-from advisingwebsiteapp.models import Message, Chat
+from advisingwebsiteapp.models import Message, Chat, ChatMember
 
 User = get_user_model()
 
@@ -32,6 +32,36 @@ class ChatConsumer(WebsocketConsumer):
         }
         return self.send_chat_message(content)
 
+    def new_chat(self, data):
+        chat_maker = User.objects.filter(email=data['createdBy']).first()
+        chat_name = f"{chat_maker.get_full_name()}"
+
+        for chatMemberName in data['chatMemberNames']:
+            chat_name += f', {chatMemberName}'
+        
+        new_chat = Chat.objects.create(chat_name = chat_name)
+
+        ChatMember.objects.create(
+            user = chat_maker,
+            chat = new_chat
+        )
+
+        for chatMemberID in data['chatMemberIDs']:
+            ChatMember.objects.create(
+                user = User.objects.filter(id=chatMemberID).first(),
+                chat = new_chat
+            )
+        
+        return self.send_message({
+            'command': 'new_chat',
+            'chat': {
+                'chat_id': new_chat.id,
+                'chat_name': new_chat.chat_name,
+                'image_url': 'http://emilcarlsson.se/assets/louislitt.png',
+                'last_message': ''
+            }
+        })
+
     def messages_to_json(self, messages):
         result = []
         for message in messages:
@@ -47,17 +77,33 @@ class ChatConsumer(WebsocketConsumer):
 
     commands = {
         'fetch_messages': fetch_messages,
-        'new_message': new_message
+        'new_message': new_message,
+        'new_chat': new_chat
     }
 
     def connect(self):
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.room_id = 'chat_%s' % self.chat_id
+        self.user = self.scope['user']
+
+        if self.user.is_anonymous:
+            self.close()
+            return
+
+        if not self.chat_id == 'home':
+            if not self.is_member(self.user, self.chat_id):
+                self.close()
+                return
+
         async_to_sync(self.channel_layer.group_add)(
             self.room_id,
             self.channel_name
         )
         self.accept()
+    
+    def is_member(self, user, chat_id):
+        chat = Chat.objects.filter(id=chat_id).first()
+        return ChatMember.objects.filter(chat=chat, user=user).aexists()
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -67,6 +113,10 @@ class ChatConsumer(WebsocketConsumer):
 
     def receive(self, text_data):
         data = json.loads(text_data)
+
+        if not self.is_member(self.scope["user"], self.chat_id):
+            self.send(text_data=json.dumps({'error': 'Unauthorized'}))
+
         self.commands[data['command']](self, data)
         
 

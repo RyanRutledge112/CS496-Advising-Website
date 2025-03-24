@@ -14,6 +14,8 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="{% static 'style.css' %}" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
   </head>
 
 <body>
@@ -51,6 +53,7 @@
       <div id="chats">
         <ul>
             {% for chat in chats %}
+            {% if request.user.id in chat.members %}
             <li class="chat {% if chat.is_active %}active{% endif %}" data-chat-id="{{ chat.chat_id }}" onclick="setActiveChat(this)">
                 <div class="wrap">
                     <img src="{{ chat.image_url }}" alt="{{ chat.name }}" />
@@ -60,11 +63,28 @@
                     </div>
                 </div>
             </li>
+            {% endif %}
             {% endfor %}
         </ul>
     </div>
       <div id="bottom-bar">
         <button id="addchat"><i class="fa fa-user-plus fa-fw" aria-hidden="true"></i> <span>Add chat</span></button>
+        <div id="chatPopup" class="modal" style="display: none;">
+          <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create New Chat</h2>
+            <form id="newChatForm">
+              {% csrf_token %}
+              <label for="chatParticipants">Select Users:</label>
+              <select id="chatParticipants" name="chatParticipants" multiple required>
+                {% for user in users %}
+                  <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit">Create Chat</button>
+            </form>
+          </div>
+        </div>
         <button id="home" onclick="window.location.href='{% url 'home' %}'"><i class="fa fa-home fa-fw" aria-hidden="true"></i> <span>Home</span></button>
       </div>
     </div>
@@ -85,21 +105,33 @@
           </li>
         </ul>
       </div>
-      <div class="message-input">
-        <div class="wrap">
-        <input id="chat-message-input" type="text" placeholder="Write your message..." />
-        <i class="fa fa-paperclip attachment" aria-hidden="true"></i>
-        <button id="chat-message-submit" class="submit">
-          <i class="fa fa-paper-plane" aria-hidden="true"></i>
-        </button>
-        </div>
-      </div>
     </div>
   </div>
 
 <script src="{% static 'main.js' %}"></script>
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
+    var email = {{ email }};
+
+    $(document).ready(function() {
+      $('#chatParticipants').select2({
+        placeholder: "Select users",
+        allowClear: true
+      });
+    });
+
+    var chatSocket = new ReconnectingWebSocket(
+        'ws://' + window.location.host + '/ws/chat/home/');
+
+    chatSocket.onmessage = function(e) {
+      var data = JSON.parse(e.data);
+      if (data['command']  === 'new_chat'){
+          var newChat = data['chat'];
+          addChatToSidebar(newChat);
+          setActiveChatById(newChat['chat_id'])
+        }
+    }
+
     function setActiveChat(clickedChat) {
       document.querySelectorAll('.chat').forEach(chat => {
         chat.classList.remove('active');
@@ -131,6 +163,92 @@
           });
         }
     });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      var addChatBtn = document.getElementById("addchat");
+      var chatPopup = document.getElementById("chatPopup");
+      var closeBtn = document.querySelector(".close");
+
+      addChatBtn.addEventListener("click", function () {
+        chatPopup.style.display = "block";
+      });
+
+      closeBtn.addEventListener("click", function () {
+        chatPopup.style.display = "none";
+      });
+
+      window.addEventListener("click", function (event) {
+        if (event.target === chatPopup) {
+          chatPopup.style.display = "none";
+        }
+      });
+    });
+
+    function getSelectedMembers() {
+      var selectedMembers = $('#chatParticipants').val();
+      var selectedNames = $('#chatParticipants option:selected').map(function() {
+        return $(this).text();
+      }).get();
+
+      console.log("Selected IDs:", selectedMembers);
+      console.log("Selected Names:", selectedNames);
+
+      return { 'ids': selectedMembers, 'names': selectedNames };
+    }
+
+    function openModal() {
+      document.getElementById('chatPopup').style.display = 'block';
+      document.documentElement.classList.add('modal-open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeModal() {
+      document.getElementById('chatPopup').style.display = 'none';
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+    }
+
+    document.querySelector('.close').addEventListener('click', closeModal);
+
+    document.getElementById('newChatForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+      chatMembers = getSelectedMembers();
+      chatSocket.send(JSON.stringify({
+        'command': 'new_chat',
+        'chatMemberIDs': chatMembers['ids'],
+        'chatMemberNames': chatMembers['names'],
+        'createdBy': email
+      }));
+      closeModal();
+    });
+
+    function addChatToSidebar(newChat) {
+        var chatList = document.querySelector('#chats ul');
+        
+        var newChatElement = document.createElement('li');
+        newChatElement.classList.add('chat');
+        newChatElement.setAttribute('data-chat-id', newChat['chat_id']);
+        newChatElement.setAttribute('onclick', 'setActiveChat(this)');
+        
+        newChatElement.innerHTML = `
+            <div class="wrap">
+                <img src="${newChat['image_url']}" alt="${newChat['chat_name']}" />
+                <div class="meta">
+                    <p class="name">${newChat['chat_name']}</p>
+                    <p class="preview">${newChat['last_message']}</p>
+                </div>
+            </div>
+        `;
+
+        chatList.insertBefore(newChatElement, chatList.firstChild);
+    }
+
+    function setActiveChatById(chat_id) {
+        var chatElement = document.querySelector(`[data-chat-id="${chat_id}"]`);
+        if (chatElement) {
+            setActiveChat(chatElement);
+        }
+    }
 </script>
 </body>
 

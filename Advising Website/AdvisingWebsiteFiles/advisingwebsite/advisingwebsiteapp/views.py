@@ -1,5 +1,6 @@
 import json
-from django.shortcuts import render, redirect
+from django.http import Http404, HttpResponseServerError, JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, update_session_auth_hash
 from django.contrib import messages as django_messages
@@ -224,38 +225,59 @@ def change_password(request):
 def chathome(request):
     user = request.user
     user_chats = ChatMember.objects.filter(user=user).select_related("chat")
+    other_users = User.objects.exclude(id=user.id)
 
     chats = [
         {
-            "name": chat_member.chat.chat_name,
+            "name": user_chat.chat.chat_name,
             "image_url": "http://emilcarlsson.se/assets/louislitt.png",
-            "chat_id": chat_member.chat.id,
-            "last_message": chat_member.chat.chat_messages.order_by('-date_sent').first().message_content
-            if chat_member.chat.chat_messages.exists() else "No messages yet."
+            "members": list(User.objects.filter(joined_chats__chat=user_chat.chat).values_list("id", flat=True)),
+            "chat_id": user_chat.chat.id,
+            "last_message": user_chat.chat.chat_messages.order_by('-date_sent').first().message_content
+            if user_chat.chat.chat_messages.exists() else "No messages yet."
         }
-        for chat_member in user_chats
+        for user_chat in user_chats
     ]
 
-    return render(request, 'chat/room_base.html', {"chats": chats})
+    return render(request, 'chat/room_base.html', {
+        "chats": chats, 
+        "email": mark_safe(json.dumps(request.user.email)), 
+        "users": other_users
+    })
 
 @login_required
 def room(request, chat_id):
     user = request.user
+    chat = get_object_or_404(Chat, id=chat_id)
+    if not ChatMember.objects.filter(user=user, chat=chat).exists():
+        return redirect('error_page')
     user_chats = ChatMember.objects.filter(user=user).select_related("chat")
+    other_users = User.objects.exclude(id=user.id)
 
     chats = [
         {
-            "name": chat_member.chat.chat_name,
+            "name": user_chat.chat.chat_name,
             "image_url": "http://emilcarlsson.se/assets/louislitt.png",
-            "chat_id": chat_member.chat.id,
-            "last_message": chat_member.chat.chat_messages.order_by('-date_sent').first().message_content
-            if chat_member.chat.chat_messages.exists() else "No messages yet."
+            "members": list(User.objects.filter(joined_chats__chat=user_chat.chat).values_list("id", flat=True)),
+            "chat_id": user_chat.chat.id,
+            "last_message": user_chat.chat.chat_messages.order_by('-date_sent').first().message_content
+            if user_chat.chat.chat_messages.exists() else "No messages yet.",
         }
-        for chat_member in user_chats
+        for user_chat in user_chats
     ]
     
     return render(request, "chat/room.html", {
         'chat_id': chat_id,
         "email": mark_safe(json.dumps(request.user.email)),
-        "chats": chats
+        "chats": chats,
+        "users": other_users
     })
+
+@login_required
+def check_chat_membership(request, chat_id):
+    chat = Chat.objects.filter(id=chat_id).first()
+    is_member = ChatMember.objects.filter(chat=chat, user=request.user).exists()
+    return JsonResponse({'is_member': is_member})
+
+def error_page(request, exception=None):
+    return render(request, 'error.html', status=500)

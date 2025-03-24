@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-$p(2uq+9lczlj4dj9d$+(nx=7!jua74tjx(4r985&57kz%0b9r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -60,7 +60,7 @@ ROOT_URLCONF = 'advisingwebsite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

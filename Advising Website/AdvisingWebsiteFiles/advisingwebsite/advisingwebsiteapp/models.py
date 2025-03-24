@@ -74,7 +74,7 @@ class Chat(models.Model):
 
 class ChatMember(models.Model):
     user = models.ForeignKey(User, related_name="joined_chats", on_delete=models.CASCADE)
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
+    chat = models.ForeignKey(Chat, related_name='members',on_delete=models.CASCADE)
     chat_last_viewed = models.DateTimeField(auto_now_add=True)
     chat_deleted = models.BooleanField(default=False)
 
