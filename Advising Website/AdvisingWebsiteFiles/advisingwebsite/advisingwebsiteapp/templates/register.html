@@ -28,7 +28,21 @@
           <input type="email" class="form-control" id="email" name="email" required>
       </div>
       <div class="mb-3">
-        <label for="password" class="form-label">Password:</label>
+        <label for="password" class="form-label">Password:<span id="passwordInfo" 
+          style="
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          line-height: 20px;
+          text-align: center;
+          border: 1px solid blue;
+          border-radius: 50%;
+          color: blue;
+          font-weight: bold;
+          cursor: pointer;
+          font-size: 14px;
+          margin-left: 5px;"
+          onclick="showPassInfo()">?</span></label>
         <input type="password" class="form-control" id="password" name="password" 
         pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{9,}$"
         title="Password must be at least 9 characters long, including an uppercase letter, a number,
@@ -37,7 +51,7 @@
     <div class="mb-3">
       <label for="student_id" class="form-label">WKU Student ID:</label>
       <input type="text" class="form-control" id="student_id" name="student_id" pattern="\d{9}" 
-      maxlength="9" title="Student ID must be exactly 9 digits." required>
+      maxlength="9" minlength="9" title="Student ID must be exactly 9 digits." required>
     </div>
     <div class="mb-3">
       <label for="major" class="form-label">Major:</label>
@@ -59,7 +73,7 @@
         font-size: 14px;
         margin-left: 5px;"
         onclick="showMajorNumberInfo()">?</span></label>
-      <input type="text" class="form-control" id="major_number" name="major_number" required>
+      <input type="text" class="form-control" id="major_number" name="major_number" maxlength="6" minlength="3" required>
     </div>
     <div class="mb-3">
       <label for="concentration" class="form-label">Concentration:</label>

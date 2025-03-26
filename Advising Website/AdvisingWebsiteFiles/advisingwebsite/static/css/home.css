@@ -202,3 +202,9 @@ footer.image-credit a {
 footer.image-credit a:hover {
     color: #ffcccc; /* Lighter red when hovered */
 }
+
+/*Error formatting*/
+.error-message {
+    color: red;
+    font-weight: bold;
+}

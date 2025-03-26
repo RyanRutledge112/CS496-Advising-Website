@@ -6,7 +6,7 @@
   {% if messages %}
     <div class="login-alert">
       {% for message in messages %}
-          <p>{{ message }}</p>
+          <p class="{% if 'error' in message.tags %}error-message{% endif %}">{{ message }}</p>
       {% endfor %}
     </div>
   {% endif %}
