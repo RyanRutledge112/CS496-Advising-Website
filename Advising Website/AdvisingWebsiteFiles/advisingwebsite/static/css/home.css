@@ -70,6 +70,15 @@ h1, h2, h3, p, a {
 .home-page a {
     border-radius: 3px;
     font-family: Bebas Neue;
+    width: 8%;
+    height: 5%;
+    background-color: #B01E24;
+    border: #B01E24;
+}
+
+.home-page a:hover {
+    background-color: #9A1A20;
+    border: #9A1A20;
 }
 
 /*Login Page Styling*/
@@ -91,6 +100,16 @@ body.login main.container-fluid { /* Only style the main content, not the navbar
     font-family: Bebas Neue;
 }
 
+.login-container button{
+    background-color: #B01E24;
+    border: #B01E24;
+}
+
+.login-container button:hover{
+    background-color: #9A1A20;
+    border: #9A1A20;
+}
+
 /* Register Page Styling */
 body.register .register-container {
     width: 100%;
@@ -107,6 +126,16 @@ body.register main.container-fluid {
     align-items: center;
     height: 1320px;
     font-family: Bebas Neue;
+}
+
+.register-container button{
+    background-color: #B01E24;
+    border: #B01E24;
+}
+
+.register-container button:hover{
+    background-color: #9A1A20;
+    border: #9A1A20;
 }
 
 /* Change Password Page Styling */
@@ -129,6 +158,8 @@ body.changePassword main.container-fluid {
 
 .change-container button{
     border-radius: 3px;
+    background-color: #B01E24;
+    border: #B01E24;
 }
 
 /* Upload Transcript Page Styling */
@@ -152,8 +183,14 @@ body.uploadTranscript main.container-fluid {
 .upload-container button{
     margin-top: 2%;
     border-radius: 3px;
+    background-color: #B01E24;
+    border: #B01E24;
 }
 
+.upload-container button:hover{
+    background-color: #9A1A20;
+    border: #9A1A20;
+}
 /* Profile Page Styling */
 body.profile .profile-container {
     width: 100%;
@@ -179,12 +216,19 @@ body.profile main.container-fluid {
 .profile-container button{
     margin-bottom: 2%;
     border-radius: 3px;
+    background-color: #B01E24;
+    border: #B01E24;
+}
+
+.profile-container button:hover{
+    background-color: #9A1A20;
+    border: #9A1A20;
 }
 
 /*Footer Styling*/
 footer.image-credit {
     width: 100%;
-    background-color: red; 
+    background-color: #B01E24; 
     color: white;
     text-align: center;
     padding: 4px 0;
@@ -192,6 +236,9 @@ footer.image-credit {
     position: relative; 
     margin: 0;
     font-family: Bebas Neue;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 footer.image-credit a {
@@ -201,6 +248,43 @@ footer.image-credit a {
 
 footer.image-credit a:hover {
     color: #ffcccc; /* Lighter red when hovered */
+}
+
+.footer-center p{
+    font-size: small;
+    margin-bottom: 1px;
+}
+
+.footer-left {
+    text-align: left;
+    align-self: flex-start; 
+    margin-bottom: 10px;
+    width: 100%;
+    padding-left: 2%;
+}
+
+.footer-left a {
+    text-decoration: none !important;
+}
+
+.footer-left a:hover {
+    text-decoration: underline !important; 
+    color: #ffcccc;
+}
+
+.footer-links {
+    list-style: none; 
+    padding: 0;
+    margin: 0;
+}
+.footer-links li {
+    margin-bottom: 0px;
+    font-size: small;
+}
+
+.footer-left h6 {
+    margin-bottom: 6px;
+    font-weight: bold;
 }
 
 /*Error formatting*/
