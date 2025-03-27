@@ -1,21 +1,26 @@
-from llama_index.readers.llama_parse import LlamaParse
 import os
 import json
 import re
 import pdfplumber
 from dotenv import load_dotenv
+from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
+from llama_index.readers.llama_parse import LlamaParse
+from .models import User, Degree, UserDegree
 
 def parse_transcript(file_path):
+    """
+    Parses a transcript PDF using LlamaParse and pdfplumber to extract
+    student information and courses.
+    """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
-    
-    load_dotenv()
 
+    load_dotenv()
     api_key = os.getenv("LLAMA_CLOUD_API_KEY")
     if not api_key:
         raise ValueError("Missing API key!")
 
-    # Initialize LlamaParse with table extraction
     parser = LlamaParse(
         api_key=api_key,
         content_guideline_instruction="Extract all course details",
@@ -23,79 +28,126 @@ def parse_transcript(file_path):
     )
 
     parsed_data = parser.load_data(file_path)
-
     extracted_text = "\n".join([section.text.strip() for section in parsed_data if section.text])
 
-    # Create dictonary to store data
     structured_data = {
         "student_name": "Unknown",
-        "wku_id": "Unknown",
+        "student_id": "Unknown",
         "college": [],
         "major": [],
+        "degree_num": [],
         "courses": []
     }
 
-    student_name_match = re.search(r"Name\s*:\s*(.+)", extracted_text, re.IGNORECASE)
-    if student_name_match:
-        structured_data["student_name"] = student_name_match.group(1).strip()
-    
-    wku_id_match = re.search(r"WKU ID\s*:\s*(\d+)", extracted_text, re.IGNORECASE)
-    if wku_id_match:
-        structured_data["wku_id"] = wku_id_match.group(1).strip()
-    else:
-        structured_data["wku_id"] = "Unknown"
+    def parse_course(subject, course, level, title, grade, credit_hours, quality_points):
+        # Appends a course to the structured_data['courses'] list
+        structured_data["courses"].append({
+            "subject": subject,
+            "course_number": course,
+            "level": level,
+            "title": title,
+            "grade": grade,
+            "credit_hours": credit_hours if credit_hours.replace(".", "").isdigit() else "0",
+            "quality_points": quality_points if quality_points.replace(".", "").isdigit() else "0"
+        })
 
-    curriculum_section_match = re.search(r"Curriculum Information(.*?)(?=\n\w+:|End of Report|$)", extracted_text, re.DOTALL)
+    # Extract name and ID
+    name_match = re.search(r"Name\s*:\s*(.+)", extracted_text, re.IGNORECASE)
+    if name_match:
+        structured_data["student_name"] = name_match.group(1).strip()
 
-    if curriculum_section_match:
-        curriculum_section = curriculum_section_match.group(1)
+    id_match = re.search(r"WKU ID\s*:\s*(\d+)", extracted_text, re.IGNORECASE)
+    if id_match:
+        structured_data["student_id"] = id_match.group(1).strip()
 
-        college_matches = re.findall(r"College:\s*(.+)", curriculum_section)
-        major_matches = re.findall(r"Major and Department:\s*(.+)", curriculum_section)
+    # Extract curriculum info
+    curriculum_match = re.search(r"Curriculum Information(.*?)(?=\n\w+:|End of Report|$)", extracted_text, re.DOTALL)
+    if curriculum_match:
+        curriculum = curriculum_match.group(1)
+        colleges = re.findall(r"College:\s*(.+)", curriculum)
+        structured_data["college"] = [c.strip() for c in colleges if "Exploratory Studies" not in c]
 
-        if college_matches:
-            structured_data["colleges"] = [college.strip() for college in college_matches if "Exploratory Studies" not in college] 
+        majors = re.findall(r"Major and Department:\s*\[(\d{3,4}[A-Z]?)\]\s*([^\n,]+)", curriculum)
+        for num, major in majors:
+            structured_data["major"].append(major.strip())
+            structured_data["degree_num"].append(num.strip())
 
-        if major_matches:
-            structured_data["majors"] = [major.strip() for major in major_matches] 
+        minors = re.findall(r"Minor:\s*\[(\d{3,4})\]\s*([^\n]+)", curriculum)
+        for num, minor in minors:
+            structured_data["major"].append(minor.strip())
+            structured_data["degree_num"].append(num.strip())
 
+        certs = re.findall(r"Major and Department:\s*\[(\d{4})\]\s*([^\n,]+)", curriculum)
+        for num, cert in certs:
+            if num.strip() not in structured_data["degree_num"]:
+                structured_data["major"].append(cert.strip())
+                structured_data["degree_num"].append(num.strip())
 
-    # Extract course data from tables
+    # Extract courses info
     with pdfplumber.open(file_path) as pdf:
-        for page in pdf.pages:
+        for page_num, page in enumerate(pdf.pages):
             tables = page.extract_tables()
-            for table in tables:
-                for row in table:
-                    # Remove empty values before processing
+            for table_num, table in enumerate(tables):
+                for row_num, row in enumerate(table):
                     row = [col.strip() if col else "" for col in row]
+                    # print(f"Row {row_num + 1} ({len(row)} cols): {row}")
 
-                    # Ensure row has at least 7 values
-                    row = [value for value in row if value] 
+                    if not row or len(row) < 2:
+                        continue
+                    if row[0].lower() == "subject" and row[1].lower() == "course":
+                        continue
 
-                    if len(row) >= 7: 
-                        subject = row[0]  
-                        course = row[1]  
-                        level = row[2]  
-                        title = row[3] 
-                        grade = row[4] if len(row) > 4 else "N/A"
-                        credit_hours = row[5] if len(row) > 5 and row[5].replace(".", "").isdigit() else "0"
-                        quality_points = row[6] if len(row) > 6 and row[6].replace(".", "").isdigit() else "0"
+                    subject = row[0]
+                    course = row[1]
 
-                        # Append only if course number is valid
-                        if course.isdigit():
-                            structured_data["courses"].append({
-                                "subject": subject,
-                                "course_number": course,
-                                "level": level,
-                                "title": title,
-                                "grade": grade,
-                                "credit_hours": credit_hours,
-                                "quality_points": quality_points
-                            })
+                    # Special case for language proficieny requirement 
+                    if len(row) >= 7 and re.match(r"^[A-Z]{2,5}$", subject) and not course.isdigit():
+                        parse_course(subject, course, "", row[2], row[4], row[5], row[6])
+                        continue
+
+                    # 11-column layout
+                    if len(row) == 11 and course.isdigit() and re.match(r"^[A-Z]{2,5}$", subject):
+                        parse_course(subject, course, row[2], row[3], row[7], row[8], row[9])
+                    # 9-column layout
+                    elif len(row) == 9 and course.isdigit() and re.match(r"^[A-Z]{2,5}$", subject):
+                        parse_course(subject, course, "", row[2], row[4], row[5], row[6])
+                    # 8-column layout
+                    elif len(row) == 8 and course.isdigit() and re.match(r"^[A-Z]{2,5}$", subject):
+                        parse_course(subject, course, row[2], row[3], row[4], row[5], row[6])
+                    # 5-column layout 
+                    elif len(row) == 5 and course.isdigit() and re.match(r"^[A-Z]{2,5}$", subject):
+                        parse_course(subject, course, row[2], row[3], "", row[4], "0")
+
     return structured_data
 
-if __name__ == "__main__":
-    transcript_file = "Parse/personal.pdf"  
+def store_user_degree(structured_data):
+    """
+    Stores extracted degree numbers to the UserDegree table, linking each to the correct User and Degree.
+    """
+    student_id = structured_data.get("student_id")
+    degree_numbers = structured_data.get("degree_num", [])
 
-    transcript_data = parse_transcript(transcript_file)
-    print(transcript_data)
+    print(f"DEBUG: Extracted student_id: {student_id}")
+    print(f"DEBUG: Extracted degree_numbers: {degree_numbers}")
+
+    if student_id and degree_numbers:
+        try:
+            user = User.objects.get(student_id=student_id)
+            print(f"DEBUG: Found User -> {user}")
+
+            for degree_number in degree_numbers:
+                degree = Degree.objects.filter(degree_number=degree_number).first()
+
+                if not degree:
+                    # print(f"No matching Degree found for degree_number={degree_number}")
+                    continue
+
+                user_degree, created = UserDegree.objects.get_or_create(
+                    user_student_id=user,
+                    degree=degree
+                )
+
+        except User.DoesNotExist:
+            print(f"No User found with student_id={student_id}")
+        except Exception as e:
+            print(f"Failed to insert UserDegree - {e}")
