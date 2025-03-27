@@ -10,7 +10,9 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.utils.safestring import mark_safe
 
 from advisingwebsiteapp.models import User, Degree
-from .scraptranscript import parse_transcript
+from .scraptranscript import parse_transcript, store_user_degree
+from .majorreqs import main as extract_major_requirements
+from .majorreqs import get_user_major
 import os
 import re
 
@@ -170,8 +172,29 @@ def upload_transcript(request):
                 destination.write(chunk)
         
         processed_data = parse_transcript(file_path)
+        print(f"DEBUG: Transcript processed: {processed_data}")
 
-        return render(request, "uploadTranscript.html", {"data": processed_data})
+        store_user_degree(processed_data)
+
+        # Get user's student_id and fetch major
+        try:
+            student_id = request.user.student_id 
+        except AttributeError:
+            return render(request, "uploadTranscript.html", {"error": "Student ID not found in user profile."})
+
+        # Get major name
+        major_name = get_user_major(student_id)
+
+        if major_name:
+            major_requirements = extract_major_requirements(student_id)
+        else:
+            # print("DEBUG: No major found for this student")
+            major_requirements = None
+
+        return render(request, "uploadTranscript.html", {
+            "transcript_data": processed_data,
+            "major_requirements": major_requirements
+        })
 
     return render(request, 'uploadTranscript.html')
 
