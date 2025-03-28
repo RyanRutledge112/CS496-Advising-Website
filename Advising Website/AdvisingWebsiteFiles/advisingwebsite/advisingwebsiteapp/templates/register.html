@@ -15,20 +15,23 @@
 
   <form action="{% url 'register' %}" method="POST">
       {% csrf_token %}
+      <p><span style="color: red;">*</span> Required fields</p>
+
       <div class="mb-3">
-          <label for="first_name" class="form-label">First Name:</label>
+          <label for="first_name" class="form-label">First Name: <span style="color: red;">*</span></label>
           <input type="text" class="form-control" id="first_name" name="first_name" required>
       </div>
       <div class="mb-3">
-          <label for="last_name" class="form-label">Last Name:</label>
+          <label for="last_name" class="form-label">Last Name: <span style="color: red;">*</span></label>
           <input type="text" class="form-control" id="last_name" name="last_name" required>
       </div>
       <div class="mb-3">
-          <label for="email" class="form-label">Email:</label>
+          <label for="email" class="form-label">Email: <span style="color: red;">*</span></label>
           <input type="email" class="form-control" id="email" name="email" required>
       </div>
       <div class="mb-3">
-        <label for="password" class="form-label">Password:<span id="passwordInfo" 
+        <label for="password" class="form-label">Password: <span style="color: red;">*</span>
+          <span id="passwordInfo" 
           style="
           display: inline-block;
           width: 20px;
@@ -49,16 +52,16 @@
         and a special character." required>
     </div>
     <div class="mb-3">
-      <label for="student_id" class="form-label">WKU Student ID:</label>
+      <label for="student_id" class="form-label">WKU Student ID: <span style="color: red;">*</span></label>
       <input type="text" class="form-control" id="student_id" name="student_id" pattern="\d{9}" 
       maxlength="9" minlength="9" title="Student ID must be exactly 9 digits." required>
     </div>
     <div class="mb-3">
-      <label for="major" class="form-label">Major:</label>
+      <label for="major" class="form-label">Major: <span style="color: red;">*</span></label>
       <input type="text" class="form-control" id="major" name="major" required>
     </div>
     <div class="mb-3">
-      <label for="major_number" class="form-label">Major Number:<span id="majorNumberInfo" 
+      <label for="major_number" class="form-label">Major Reference Number: <span style="color: red;">*</span><span id="majorNumberInfo" 
         style="
         display: inline-block;
         width: 20px;
@@ -84,16 +87,16 @@
       <input type="text" class="form-control" id="minor" name="minor">
     </div>
     <div class="mb-3">
-      <label for="minor_number" class="form-label">Minor Number:</label>
-      <input type="text" class="form-control" id="minor_number" name="minor_number">
+      <label for="minor_number" class="form-label">Minor Reference Number:</label>
+      <input type="text" class="form-control" id="minor_number" name="minor_number" maxlength="6" minlength="3">
     </div>
     <div class="mb-3">
       <label for="certificate" class="form-label">Certificate:</label>
       <input type="text" class="form-control" id="certificate" name="certificate">
     </div>
     <div class="mb-3">
-      <label for="certificate_number" class="form-label">Certificate Number:</label>
-      <input type="text" class="form-control" id="certificate_number" name="certificate_number">
+      <label for="certificate_number" class="form-label">Certificate Reference Number:</label>
+      <input type="text" class="form-control" id="certificate_number" name="certificate_number" maxlength="6" minlength="3">
     </div>
       <button type="submit" class="btn btn-primary">Create Account</button>
   </form>

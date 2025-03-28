@@ -8,8 +8,9 @@ from django.contrib.auth.decorators import login_required
 from .models import Chat, ChatMember, Message
 from django.contrib.auth.forms import PasswordChangeForm
 from django.utils.safestring import mark_safe
+from django.db import connection
 
-from advisingwebsiteapp.models import User, Degree
+from advisingwebsiteapp.models import User, Degree, UserDegree
 from .scraptranscript import parse_transcript, store_user_degree
 from .majorreqs import main as extract_major_requirements
 from .majorreqs import get_user_major
@@ -82,7 +83,10 @@ def register(request):
             concentration=concentration, 
             hours_needed=120,  
             degree_type=1  
-        ) 
+        )
+
+        # Link the major degree to the user in UserDegree
+        UserDegree.objects.create(user_student_id=user, degree=degree) 
 
         if minor:
             degree = Degree.objects.create(
@@ -92,6 +96,8 @@ def register(request):
                 hours_needed=21,
                 degree_type=2
             )
+        # Link the minor degree to the user in UserDegree
+        UserDegree.objects.create(user_student_id=user, degree=degree)
 
         if certificate:
             degree = Degree.objects.create(
@@ -101,6 +107,9 @@ def register(request):
                     hours_needed=12,
                     degree_type=3
             )
+        # Link the certificate degree to the user in UserDegree
+        UserDegree.objects.create(user_student_id=user, degree=degree)
+
         degree.save()
 
         # Log the user in after registration
@@ -207,6 +216,13 @@ def update_profile(request):
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
+        major = request.POST.get('major')
+        major_number = request.POST.get('major_number')
+        concentration = request.POST.get('concentration', '')
+        minor = request.POST.get('minor', '')
+        minor_number = request.POST.get('minor_number', '')
+        certificate = request.POST.get('certificate', '')
+        certificate_number = request.POST.get('certificate_number', '')
 
         #update only the fields that have been filled in
         if first_name:
@@ -215,11 +231,108 @@ def update_profile(request):
             request.user.last_name = last_name
         if email:
             request.user.email = email
-
         request.user.save()
+  
+        # Call helper function to update degree information
+        update_user_degrees(request)
+
         django_messages.success(request, 'Your profile has been updated.')
         return redirect('profile')
     return render(request, 'profile.html')
+
+@login_required
+def update_user_degrees(request):
+    if request.method == 'POST':
+        user = request.user  # Get logged-in user
+        student_id = user.student_id  # Get student ID
+
+        user_degrees = UserDegree.objects.filter(user_student_id=student_id)
+
+        # Handle major
+        major = request.POST.get('major')
+        major_number = request.POST.get('major_number')
+        
+        if major:
+            if not major_number:
+                # If major is provided but major_number is missing, show error
+                django_messages.error(request, "Please provide the major reference number.")
+                return redirect('profile')
+            
+            # Fetch the existing minor degree record correctly
+            old_major = UserDegree.objects.filter(user_student_id=user, degree__degree_type=1).first()
+
+            if old_major:
+                old_major.delete()
+                connection.commit()
+
+            # Create or update the new major
+            major_degree, created = Degree.objects.get_or_create(degree_name=major, degree_number=major_number, degree_type=1, defaults={'hours_needed': 120})
+            
+            if major_number:
+                major_degree.degree_number = major_number
+                major_degree.save()
+
+            # Add the new major degree to UserDegree
+            new_major = UserDegree.objects.create(user_student_id=user, degree=major_degree)
+            
+        # Handle concentration
+        concentration = request.POST.get('concentration', '')
+        if concentration:
+            # Check if the user has a major degree (degree_type=1)
+            major_degree = user_degrees.filter(degree__degree_type=1).first()  # Get the existing major degree if it exists
+            if major_degree:
+                # Update concentration for the existing major degree
+                major_degree.degree.concentration = concentration
+                major_degree.degree.save()
+
+        # Handle minor
+        minor = request.POST.get('minor')
+        minor_number = request.POST.get('minor_number')
+        if minor:
+            if not minor_number:
+                # If minor is provided but minor_number is missing, show error
+                django_messages.error(request, "Please provide the minor reference number.")
+                return redirect('profile')
+            
+            # Fetch the existing minor degree record correctly
+            old_minor = UserDegree.objects.filter(user_student_id=user, degree__degree_type=2).first()
+            
+            if old_minor:
+                old_minor.delete()
+                connection.commit()
+
+            minor_degree, created = Degree.objects.get_or_create(degree_name=minor, degree_type=2, defaults={'hours_needed': 21})
+            if minor_number:
+                minor_degree.degree_number = minor_number
+                minor_degree.save()
+
+            # Add the new minor degree to UserDegree
+            new_user_degree = UserDegree.objects.create(user_student_id=user, degree=minor_degree)
+            
+        # Handle certificate
+        certificate = request.POST.get('certificate')
+        certificate_number = request.POST.get('certificate_number')
+        if certificate:
+            if not certificate_number:
+                # If certificate is provided but certificate_number is missing, show error
+                messages.error(request, "Please provide the certificate reference number.")
+                return redirect('profile')
+            
+            old_certificate = UserDegree.objects.filter(user_student_id=user, degree__degree_type=3).first()
+
+            if old_certificate:
+                print(f"Deleting old certificate: {old_certificate.degree.degree_name} (UserDegree ID: {old_certificate.id})")
+                old_certificate.delete()
+                connection.commit()
+
+            certificate_degree, created = Degree.objects.get_or_create(degree_name=certificate, degree_type=3, defaults={'hours_needed': 12})
+            if certificate_number:
+                certificate_degree.degree_number = certificate_number
+                certificate_degree.save()
+                
+            new_certificate = UserDegree.objects.create(user_student_id=user, degree=certificate_degree)
+            
+        return redirect('profile')
 
 @login_required
 def change_password(request):
