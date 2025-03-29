@@ -78,10 +78,64 @@
         onclick="showMajorNumberInfo()">?</span></label>
       <input type="text" class="form-control" id="major_number" name="major_number" maxlength="6" minlength="3" required>
     </div>
+    <!-- Add double Major Checkbox -->
+    <div class="mb-3">
+      <input type="checkbox" id="double_major" name="double_major">
+      <label for="double_major">Double Major?</label>
+    </div>
+    
+    <div id="second_major_fields" style="display: none;">
+      <div class="mb-3">
+        <label for="second_major" class="form-label">Second Major:</label>
+        <input type="text" class="form-control" id="second_major" name="second_major">
+      </div>
+      <div class="mb-3">
+        <label for="second_major_number" class="form-label">Second Major Reference Number:</label>
+        <input type="text" class="form-control" id="second_major_number" name="second_major_number" maxlength="6" minlength="3">
+      </div>
+    </div>
+    <!-- Add Triple Major Checkbox -->
+    <div class="mb-3">
+      <input type="checkbox" id="triple_major" name="triple_major">
+      <label for="triple_major">Triple Major?</label>
+    </div>
+
+    <div id="third_major_fields" style="display: none;">
+      <div class="mb-3">
+        <label for="third_major" class="form-label">Third Major:</label>
+        <input type="text" class="form-control" id="third_major" name="third_major">
+      </div>
+      <div class="mb-3">
+        <label for="third_major_number" class="form-label">Third Major Reference Number:</label>
+        <input type="text" class="form-control" id="third_major_number" name="third_major_number" maxlength="6" minlength="3">
+      </div>
+    </div>
+    <!--Concentration-->
     <div class="mb-3">
       <label for="concentration" class="form-label">Concentration:</label>
       <input type="text" class="form-control" id="concentration" name="concentration">
     </div>
+    <div class="mb-3">
+      <input type="checkbox" id="double_concentration" name="double_concentration">
+      <label for="double_concentration">Second Concentration?</label>
+    </div>
+    <div id="second_concentration_fields" style="display: none;">
+      <div class="mb-3">
+        <label for="second_concentration" class="form-label">Second Concentration:</label>
+        <input type="text" class="form-control" id="second_concentration" name="second_concentration">
+      </div>
+    </div>
+      <div class="mb-3">
+        <input type="checkbox" id="third_concentration" name="third_concentration">
+        <label for="third_concentration">Third Concentration?</label>
+      </div>
+      <div id="third_concentration_fields" style="display: none;">
+        <div class="mb-3">
+          <label for="third_concentration" class="form-label">Third Concentration:</label>
+          <input type="text" class="form-control" id="third_concentration" name="third_concentration">
+        </div>
+      </div>
+    <!--Minor-->
     <div class="mb-3">
       <label for="minor" class="form-label">Minor:</label>
       <input type="text" class="form-control" id="minor" name="minor">
@@ -90,6 +144,39 @@
       <label for="minor_number" class="form-label">Minor Reference Number:</label>
       <input type="text" class="form-control" id="minor_number" name="minor_number" maxlength="6" minlength="3">
     </div>
+    <!-- Add double Minor Checkbox -->
+    <div class="mb-3">
+      <input type="checkbox" id="double_minor" name="double_minor">
+      <label for="double_major">Double Minor?</label>
+    </div>
+    
+    <div id="second_minor_fields" style="display: none;">
+      <div class="mb-3">
+        <label for="second_minor" class="form-label">Second Minor:</label>
+        <input type="text" class="form-control" id="second_minor" name="second_minor">
+      </div>
+      <div class="mb-3">
+        <label for="second_minor_number" class="form-label">Second Minor Reference Number:</label>
+        <input type="text" class="form-control" id="second_minor_number" name="second_minor_number" maxlength="6" minlength="3">
+      </div>
+    </div>
+    <!-- Add Triple Minor Checkbox -->
+    <div class="mb-3">
+      <input type="checkbox" id="triple_minor" name="triple_minor">
+      <label for="triple_minor">Triple Minor?</label>
+    </div>
+
+    <div id="third_minor_fields" style="display: none;">
+      <div class="mb-3">
+        <label for="third_minor" class="form-label">Third Minor:</label>
+        <input type="text" class="form-control" id="third_minor" name="third_minor">
+      </div>
+      <div class="mb-3">
+        <label for="third_minor_number" class="form-label">Third Minor Reference Number:</label>
+        <input type="text" class="form-control" id="third_minor_number" name="third_minor_number" maxlength="6" minlength="3">
+      </div>
+    </div>
+    <!--Certificate-->
     <div class="mb-3">
       <label for="certificate" class="form-label">Certificate:</label>
       <input type="text" class="form-control" id="certificate" name="certificate">
@@ -98,9 +185,173 @@
       <label for="certificate_number" class="form-label">Certificate Reference Number:</label>
       <input type="text" class="form-control" id="certificate_number" name="certificate_number" maxlength="6" minlength="3">
     </div>
+    <!-- Add Second Certificate Checkbox -->
+    <div class="mb-3">
+      <input type="checkbox" id="double_certificate" name="double_certificate">
+      <label for="double_certificate">Second Certificate?</label>
+    </div>
+    
+    <div id="second_certificate_fields" style="display: none;">
+      <div class="mb-3">
+        <label for="second_certificate" class="form-label">Second Certificate:</label>
+        <input type="text" class="form-control" id="second_certificate" name="second_certificate">
+      </div>
+      <div class="mb-3">
+        <label for="second_certificate_number" class="form-label">Second Certificate Reference Number:</label>
+        <input type="text" class="form-control" id="second_certificate_number" name="second_certificate_number" maxlength="6" minlength="3">
+      </div>
+    </div>
+    <!-- Add Third certificate Checkbox -->
+    <div class="mb-3">
+      <input type="checkbox" id="triple_certificate" name="triple_certificate">
+      <label for="triple_certificate">Third certificate?</label>
+    </div>
+
+    <div id="third_certificate_fields" style="display: none;">
+      <div class="mb-3">
+        <label for="third_certificate" class="form-label">Third Certificate:</label>
+        <input type="text" class="form-control" id="third_certificate" name="third_certificate">
+      </div>
+      <div class="mb-3">
+        <label for="third_certificate_number" class="form-label">Third Certificate Reference Number:</label>
+        <input type="text" class="form-control" id="third_certificate_number" name="third_certificate_number" maxlength="6" minlength="3">
+      </div>
+    </div>
       <button type="submit" class="btn btn-primary">Create Account</button>
   </form>
 
   <p>Already have an account? <a href="{% url 'login' %}">Log In</a></p>
 </div>
+
+<script>
+    // JavaScript to toggle the second major fields when the checkbox is checked
+    document.addEventListener("DOMContentLoaded", function () {
+      var doubleMajorCheckbox = document.getElementById("double_major");
+      var secondMajorFields = document.getElementById("second_major_fields");
+      var tripleMajorCheckbox = document.getElementById("triple_major");
+      var thirdMajorFields = document.getElementById("third_major_fields");
+
+      // Check the state of the checkbox on page load
+      if (doubleMajorCheckbox.checked) {
+          secondMajorFields.style.display = "block";
+      }
+
+      // Check the state of the triple major checkbox on page load
+      if (tripleMajorCheckbox.checked) {
+          thirdMajorFields.style.display = "block";
+      }
+
+      // show second major fields when checkbox is clicked
+      doubleMajorCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              secondMajorFields.style.display = "block";
+          } else {
+              secondMajorFields.style.display = "none";
+          }
+      });
+      //Show third major fields
+      tripleMajorCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              thirdMajorFields.style.display = "block";
+          } else {
+              thirdMajorFields.style.display = "none";
+          }
+      });
+      // Handle concentration checkboxes
+      var doubleConcentrationCheckbox = document.getElementById("double_concentration");
+      var secondConcentrationFields = document.getElementById("second_concentration_fields");
+      var thirdConcentrationCheckbox = document.getElementById("third_concentration");
+      var thirdConcentrationFields = document.getElementById("third_concentration_fields");
+
+      // Check the state of the checkbox on page load
+      if (doubleConcentrationCheckbox.checked) {
+          secondConcentrationFields.style.display = "block";
+      }
+
+      if (thirdConcentrationCheckbox.checked) {
+          thirdConcentrationFields.style.display = "block";
+      }
+
+      // show second concentration fields when checkbox is clicked
+      doubleConcentrationCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              secondConcentrationFields.style.display = "block";
+          } else {
+              secondConcentrationFields.style.display = "none";
+          }
+      });
+      //Show third concentration fields
+      thirdConcentrationCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              thirdConcentrationFields.style.display = "block";
+          } else {
+              thirdConcentrationFields.style.display = "none";
+          }
+      });
+      //Handle Minor
+      var doubleMinorCheckbox = document.getElementById("double_minor");
+      var secondMinorFields = document.getElementById("second_minor_fields");
+      var tripleMinorCheckbox = document.getElementById("triple_minor");
+      var thirdMinorFields = document.getElementById("third_minor_fields");
+
+      // Check the state of the checkbox on page load
+      if (doubleMinorCheckbox.checked) {
+          secondMinorFields.style.display = "block";
+      }
+
+      // Check the state of the triple major checkbox on page load
+      if (tripleMinorCheckbox.checked) {
+          thirdMinorFields.style.display = "block";
+      }
+
+      // show second major fields when checkbox is clicked
+      doubleMinorCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              secondMinorFields.style.display = "block";
+          } else {
+              secondMinorFields.style.display = "none";
+          }
+      });
+      //Show third major fields
+      tripleMinorCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              thirdMinorFields.style.display = "block";
+          } else {
+              thirdMinorFields.style.display = "none";
+          }
+      });
+      //handle certificate
+      var doubleCertificateCheckbox = document.getElementById("double_certificate");
+      var secondCertificateFields = document.getElementById("second_certificate_fields");
+      var tripleCertificateCheckbox = document.getElementById("triple_certificate");
+      var thirdCertificateFields = document.getElementById("third_certificate_fields");
+
+      // Check the state of the checkbox on page load
+      if (doubleCertificateCheckbox.checked) {
+          secondCertificateFields.style.display = "block";
+      }
+
+      // Check the state of the triple major checkbox on page load
+      if (tripleCertificateCheckbox.checked) {
+          thirdCertificateFields.style.display = "block";
+      }
+
+      // show second major fields when checkbox is clicked
+      doubleCertificateCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              secondCertificateFields.style.display = "block";
+          } else {
+              secondCertificateFields.style.display = "none";
+          }
+      });
+      //Show third major fields
+      tripleCertificateCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+              thirdCertificateFields.style.display = "block";
+          } else {
+              thirdCertificateFields.style.display = "none";
+          }
+      });
+  });
+</script>
 {% endblock %}

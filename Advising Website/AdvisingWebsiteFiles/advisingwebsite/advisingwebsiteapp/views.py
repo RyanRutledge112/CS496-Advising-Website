@@ -42,11 +42,25 @@ def register(request):
         student_id = request.POST.get('student_id')
         major = request.POST.get('major')
         major_number = request.POST.get('major_number')
+        second_major = request.POST.get('second_major', '')
+        second_major_number = request.POST.get('second_major_number', '')
+        third_major = request.POST.get('third_major', '')
+        third_major_number = request.POST.get('third_major_number', '')
         minor = request.POST.get('minor', '')
         minor_number = request.POST.get('minor_number', '')
+        second_minor = request.POST.get('second_minor', '')
+        second_minor_number = request.POST.get('second_minor_number', '')
+        third_minor = request.POST.get('third_minor', '')
+        third_minor_number = request.POST.get('third_minor_number', '')
         concentration = request.POST.get('concentration', '')
+        second_concentration = request.POST.get('second_concentration', '')
+        third_concentration = request.POST.get('third_concentration', '')
         certificate = request.POST.get('certificate', '')
         certificate_number = request.POST.get('certificate_number', '')
+        second_certificate = request.POST.get('second_certificate', '')
+        second_certificate_number = request.POST.get('second_certificate_number', '')
+        third_certificate = request.POST.get('third_certificate', '')
+        third_certificate_number = request.POST.get('third_certificate_number', '')
 
         # Set default values for is_student and is_advisor
         is_student = True  # Default to True (most users are students)
@@ -76,8 +90,8 @@ def register(request):
                                         student_id=student_id)
         user.save()
 
-        # Create Degree record 
-        degree = Degree.objects.create(
+        # Create Degree record for the first major if it doesn't exist for this user
+        degree, created = Degree.objects.get_or_create(
             degree_name=major,
             degree_number=major_number,
             concentration=concentration, 
@@ -85,32 +99,103 @@ def register(request):
             degree_type=1  
         )
 
-        # Link the major degree to the user in UserDegree
-        UserDegree.objects.create(user_student_id=user, degree=degree) 
+        # Link the major degree to the user in UserDegree only if it doesn't exist already
+        if not UserDegree.objects.filter(user_student_id=user, degree=degree).exists():
+            UserDegree.objects.create(user_student_id=user, degree=degree) 
+
+        # Create Degree record for Second Major if provided
+        if second_major:
+            second_major_degree, created = Degree.objects.get_or_create(
+                degree_name=second_major,
+                degree_number=second_major_number,
+                concentration=second_concentration,
+                hours_needed=120,
+                degree_type=1
+            )
+            if not UserDegree.objects.filter(user_student_id=user, degree=second_major_degree).exists():
+                UserDegree.objects.create(user_student_id=user, degree=second_major_degree)
+
+        # Create Degree record for Third Major if provided
+        if third_major:
+            third_major_degree, created = Degree.objects.get_or_create(
+                degree_name=third_major,
+                degree_number=third_major_number,
+                concentration=third_concentration,
+                hours_needed=120,
+                degree_type=1
+            )
+            if not UserDegree.objects.filter(user_student_id=user, degree=third_major_degree).exists():
+                 UserDegree.objects.create(user_student_id=user, degree=third_major_degree)
 
         if minor:
-            degree = Degree.objects.create(
+            minor_degree, created = Degree.objects.get_or_create(
                 degree_name=minor,
                 degree_number=minor_number,
                 concentration=concentration,
                 hours_needed=21,
                 degree_type=2
             )
-        # Link the minor degree to the user in UserDegree
-        UserDegree.objects.create(user_student_id=user, degree=degree)
+            if not UserDegree.objects.filter(user_student_id=user, degree=minor_degree).exists():
+                UserDegree.objects.create(user_student_id=user, degree=minor_degree)
+
+        # Create Degree record for Second Minor if provided
+        if second_minor:
+            second_minor_degree, created = Degree.objects.get_or_create(
+                degree_name=second_minor,
+                degree_number=second_minor_number,
+                concentration=concentration,
+                hours_needed=21,
+                degree_type=2
+            )
+            if not UserDegree.objects.filter(user_student_id=user, degree=second_minor_degree).exists():
+                UserDegree.objects.create(user_student_id=user, degree=second_minor_degree)
+
+        # Create Degree record for Third minor if provided
+        if third_minor:
+            third_minor_degree, created = Degree.objects.get_or_create(
+                degree_name=third_minor,
+                degree_number=third_minor_number,
+                concentration=concentration,
+                hours_needed=21,
+                degree_type=2
+            )
+            if not UserDegree.objects.filter(user_student_id=user, degree=third_minor_degree).exists():
+                 UserDegree.objects.create(user_student_id=user, degree=third_minor_degree)
 
         if certificate:
-            degree = Degree.objects.create(
-                    degree_name=certificate,
-                    degree_number=certificate_number,
-                    concentration=certificate,
-                    hours_needed=12,
-                    degree_type=3
+            certificate_degree, created = Degree.objects.get_or_create(
+                degree_name=certificate,
+                degree_number=certificate_number,
+                concentration=certificate,
+                hours_needed=12,
+                degree_type=3
             )
-        # Link the certificate degree to the user in UserDegree
-        UserDegree.objects.create(user_student_id=user, degree=degree)
+            if not UserDegree.objects.filter(user_student_id=user, degree=certificate_degree).exists():
+                UserDegree.objects.create(user_student_id=user, degree=certificate_degree)
 
-        degree.save()
+         # Create Degree record for Second certificate if provided
+        if second_certificate:
+            second_certificate_degree, created = Degree.objects.get_or_create(
+                degree_name=second_certificate,
+                degree_number=second_certificate_number,
+                concentration=concentration,
+                hours_needed=12,
+                degree_type=3
+            )
+            if not UserDegree.objects.filter(user_student_id=user, degree=second_certificate_degree).exists():
+                UserDegree.objects.create(user_student_id=user, degree=second_certificate_degree)
+
+        # Create Degree record for Third certificate if provided
+        if third_certificate:
+            third_certificate_degree, created = Degree.objects.get_or_create(
+                degree_name=third_certificate,
+                degree_number=third_certificate_number,
+                concentration=concentration,
+                hours_needed=12,
+                degree_type=3
+            )
+            if not UserDegree.objects.filter(user_student_id=user, degree=third_certificate_degree).exists():
+                 UserDegree.objects.create(user_student_id=user, degree=third_certificate_degree)
 
         # Log the user in after registration
         login(request, user)

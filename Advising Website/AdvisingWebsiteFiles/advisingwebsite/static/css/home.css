@@ -122,8 +122,9 @@ body.register main.container-fluid {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 1320px;
+    min-height: 100vh;
     font-family: Bebas Neue;
+    padding: 50px 0;
 }
 
 .register-container button{
