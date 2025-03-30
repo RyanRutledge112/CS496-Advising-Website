@@ -686,29 +686,30 @@ body {
   z-index: 1000;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%); /* Fix the position of the modal */
-  min-width: 280px;
-  max-width: 340px;
+  transform: translate(-50%, -50%);
+  min-width: 600px;
+  max-width: 900px;
   height: auto;
-  max-height: 80vh; /* Limit height to 80% of the viewport */
-  overflow: hidden;  /* Prevent overflow */
+  max-height: 80vh;
+  overflow: hidden;
   border-radius: 8px;
-  padding: 20px; /* Add some padding to prevent content touching edges */
+  padding: 20px;
 }
 
 html.modal-open, body.modal-open {
-  overflow: hidden; /* Disable scrolling on both html and body */
+  overflow: hidden;
   height: 100%;
   width: 100%;
 }
 
 .modal-content {
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
   background-color: white;
   color: black;
   padding: 20px;
   border-radius: 8px;
-  min-width: 280px;
-  max-width: 340px;
+  min-width: 600px;
+  max-width: 900px;
   text-align: center;
   position: relative;
   overflow: auto;
@@ -718,11 +719,26 @@ html.modal-open, body.modal-open {
   justify-content: center;
 }
 
+.modal-content label {
+  font-size: 16px;
+}
+
+.select2-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 400px;
+}
+
 .modal-content button {
   margin-top: 10px;
-  margin-left: 66px;
   padding: 10px 20px;
   cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
+  font-size: 18px !important;
 }
 
 .close {
@@ -734,26 +750,39 @@ html.modal-open, body.modal-open {
 }
 
 .select2-container {
-  min-width: 200px !important;
   width: 100% !important;
 }
 
-.select2-selection {
-  min-height: 40px;
+
+.select2-container .select2-selection {
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  color: #333;
 }
 
-.select2-dropdown {
-  max-height: 200px;
-  height: auto !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+.select2-container .select2-dropdown {
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  color: black !important;
+  background-color: white !important;
 }
 
-.select2-results {
-  max-height: 150px !important;
-  overflow-y: auto !important;
+.select2-results__option {
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  color: black !important;
+  background-color: white !important;
 }
 
-.select2-dropdown .select2-results {
-  overflow-x: hidden !important;
+.select2-results__option--highlighted {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+.select2-search input {
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
+  font-size: 16px;
+  color: black !important;
+  background-color: white !important;
+  border: 1px solid #ccc;
 }

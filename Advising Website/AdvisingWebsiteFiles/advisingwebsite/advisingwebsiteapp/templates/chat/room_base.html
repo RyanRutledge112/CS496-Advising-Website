@@ -76,12 +76,14 @@
             <form id="newChatForm">
               {% csrf_token %}
               <label for="chatParticipants">Select Users:</label>
-              <select id="chatParticipants" name="chatParticipants" multiple required>
-                {% for user in users %}
-                  <option value="{{ user.id }}">{{ user.get_full_name }}</option>
-                {% endfor %}
-              </select>
-              <button type="submit">Create Chat</button>
+              <div class="select2-wrapper">
+                <select id="chatParticipants" name="chatParticipants" multiple required>
+                  {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit">Create Chat</button>
+              </div>
             </form>
           </div>
         </div>
@@ -115,6 +117,7 @@
 
     $(document).ready(function() {
       $('#chatParticipants').select2({
+        dropdownParent: $('#chatPopup'),
         placeholder: "Select users",
         allowClear: true
       });
