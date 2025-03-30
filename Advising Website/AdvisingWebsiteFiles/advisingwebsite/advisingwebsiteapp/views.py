@@ -293,7 +293,47 @@ def upload_transcript(request):
     return render(request, 'uploadTranscript.html')
 
 def profile(request):
-    return render(request, 'profile.html')
+    user = request.user
+    user_degrees = UserDegree.objects.filter(user_student_id=user).select_related('degree')
+
+    # Separate degrees based on type
+    majors = [ud.degree for ud in user_degrees if ud.degree.degree_type == 1]
+    minors = [ud.degree for ud in user_degrees if ud.degree.degree_type == 2]
+    certificates = [ud.degree for ud in user_degrees if ud.degree.degree_type == 3]
+
+    # Get concentrations for majors and minors
+    concentrations = {
+        'major': [],
+        'minor': []
+    }
+
+    for degree in user_degrees:
+        concentration = degree.degree.concentration
+        degree_type = degree.degree.degree_type
+        degree_name = degree.degree.degree_name
+
+        if concentration:
+            if degree_type == 1:
+                concentrations['major'].append({
+                    'concentration': concentration,
+                    'degree_name': degree_name,  # Store the degree name here
+                    'degree': degree.degree
+                })
+            elif degree_type == 2:
+                concentrations['minor'].append({
+                    'concentration': concentration,
+                    'degree_name': degree_name,  # Store the degree name here
+                    'degree': degree.degree
+                })
+
+    context = {
+        'user': user,
+        'majors': majors,
+        'minors': minors,
+        'certificates': certificates,
+        'concentrations': concentrations,
+    }
+    return render(request, 'profile.html', context)
 
 @login_required
 def update_profile(request):
@@ -331,35 +371,53 @@ def update_user_degrees(request):
         user = request.user  # Get logged-in user
         student_id = user.student_id  # Get student ID
 
-        user_degrees = UserDegree.objects.filter(user_student_id=student_id)
+        user_degrees = UserDegree.objects.filter(user_student_id=user)
 
         # Handle major
         major = request.POST.get('major')
         major_number = request.POST.get('major_number')
+        selected_major_number = request.POST.get('selected_major')
         
-        if major:
-            if not major_number:
-                # If major is provided but major_number is missing, show error
-                django_messages.error(request, "Please provide the major reference number.")
-                return redirect('profile')
-            
-            # Fetch the existing minor degree record correctly
-            old_major = UserDegree.objects.filter(user_student_id=user, degree__degree_type=1).first()
+        # Check if the major reference number is missing
+        if major and not major_number:
+            django_messages.error(request, "You must enter a Major Reference Number.")
+            return redirect('profile') 
 
-            if old_major:
-                old_major.delete()
-                connection.commit()
+        # Handle major deletion
+        if selected_major_number:
+            print(f"Removing major with number: {selected_major_number}")  # Debugging
+            major_degree = user_degrees.filter(degree__degree_number=selected_major_number, degree__degree_type=1).first()
+            if major_degree:
+                print(f"Deleting {major_degree.degree.degree_name} from UserDegree")
+                major_degree.delete()
+            else:
+                print(f"No matching UserDegree found for major number {selected_major_number}")
 
-            # Create or update the new major
-            major_degree, created = Degree.objects.get_or_create(degree_name=major, degree_number=major_number, degree_type=1, defaults={'hours_needed': 120})
+        print(f"Received form data - New Major: {major}, Major Number: {major_number}")
+        # Add the new major
+        if major and major_number:
+            print(f"Adding new major: {major} (Number: {major_number})")
             
-            if major_number:
-                major_degree.degree_number = major_number
-                major_degree.save()
+            major_degree, created = Degree.objects.get_or_create(
+                degree_number=major_number, 
+                degree_type=1, 
+                defaults={'degree_name': major, 'hours_needed': 120}
+            )
 
-            # Add the new major degree to UserDegree
-            new_major = UserDegree.objects.create(user_student_id=user, degree=major_degree)
-            
+            if created:
+                print(f"Created new Degree entry: {major}")
+            else:
+                print(f"Degree already exists: {major}")
+
+                if major_degree.degree_name != major:
+                    major_degree.degree_name = major
+                    major_degree.save()
+                    print(f"Updated Degree name to: {major}")
+
+            # Associate the new major with the user
+            UserDegree.objects.create(user_student_id=user, degree=major_degree)
+            print(f"Added {major} to UserDegree")
+
         # Handle concentration
         concentration = request.POST.get('concentration', '')
         if concentration:
@@ -373,49 +431,92 @@ def update_user_degrees(request):
         # Handle minor
         minor = request.POST.get('minor')
         minor_number = request.POST.get('minor_number')
-        if minor:
-            if not minor_number:
-                # If minor is provided but minor_number is missing, show error
-                django_messages.error(request, "Please provide the minor reference number.")
-                return redirect('profile')
-            
-            # Fetch the existing minor degree record correctly
-            old_minor = UserDegree.objects.filter(user_student_id=user, degree__degree_type=2).first()
-            
-            if old_minor:
-                old_minor.delete()
-                connection.commit()
+        selected_minor_number = request.POST.get('selected_minor')
 
-            minor_degree, created = Degree.objects.get_or_create(degree_name=minor, degree_type=2, defaults={'hours_needed': 21})
-            if minor_number:
-                minor_degree.degree_number = minor_number
-                minor_degree.save()
+        # Check if the minor reference number is missing
+        if minor and not minor_number:
+            django_messages.error(request, "You must enter a Minor Reference Number.")
+            return redirect('profile') 
 
-            # Add the new minor degree to UserDegree
-            new_user_degree = UserDegree.objects.create(user_student_id=user, degree=minor_degree)
+         # Handle minor deletion
+        if selected_minor_number:
+            print(f"Removing minor with number: {selected_minor_number}")  # Debugging
+            minor_degree = user_degrees.filter(degree__degree_number=selected_minor_number, degree__degree_type=2).first()
+            if minor_degree:
+                print(f"Deleting {minor_degree.degree.degree_name} from UserDegree")
+                minor_degree.delete()
+            else:
+                print(f"No matching UserDegree found for minor number {selected_minor_number}")
+
+        print(f"Received form data - New Minor: {minor}, Minor Number: {minor_number}")
+        # Add the new minor
+        if minor and minor_number:
+            print(f"Adding new minor: {minor} (Number: {minor_number})")
+            
+            minor_degree, created = Degree.objects.get_or_create(
+                degree_number=minor_number, 
+                degree_type=2, 
+                defaults={'degree_name': minor, 'hours_needed': 21}
+            )
+
+            if created:
+                print(f"Created new Degree entry: {minor}")
+            else:
+                print(f"Degree already exists: {minor}")
+
+                if minor_degree.degree_name != minor:
+                    minor_degree.degree_name = minor
+                    minor_degree.save()
+                    print(f"Updated Degree name to: {minor}")
+
+            # Associate the new minor with the user
+            UserDegree.objects.create(user_student_id=user, degree=minor_degree)
+            print(f"Added {minor} to UserDegree")
             
         # Handle certificate
         certificate = request.POST.get('certificate')
         certificate_number = request.POST.get('certificate_number')
-        if certificate:
-            if not certificate_number:
-                # If certificate is provided but certificate_number is missing, show error
-                messages.error(request, "Please provide the certificate reference number.")
-                return redirect('profile')
+        selected_certificate_number = request.POST.get('selected_certificate')
+
+        # Check if the certificate reference number is missing
+        if certificate and not certificate_number:
+            django_messages.error(request, "You must enter a Certificate Reference Number.")
+            return redirect('profile') 
+
+         # Handle certificate deletion
+        if selected_certificate_number:
+            print(f"Removing certificate with number: {selected_certificate_number}")  # Debugging
+            certificate_degree = user_degrees.filter(degree__degree_number=selected_certificate_number, degree__degree_type=3).first()
+            if certificate_degree:
+                print(f"Deleting {certificate_degree.degree.degree_name} from UserDegree")
+                certificate_degree.delete()
+            else:
+                print(f"No matching UserDegree found for certificate number {selected_certificate_number}")
+
+        print(f"Received form data - New certificate: {certificate}, certificate Number: {certificate_number}")
+        # Add the new certificate
+        if certificate and certificate_number:
+            print(f"Adding new certificate: {certificate} (Number: {certificate_number})")
             
-            old_certificate = UserDegree.objects.filter(user_student_id=user, degree__degree_type=3).first()
+            certificate_degree, created = Degree.objects.get_or_create(
+                degree_number=certificate_number, 
+                degree_type=3, 
+                defaults={'degree_name': certificate, 'hours_needed': 12}
+            )
 
-            if old_certificate:
-                print(f"Deleting old certificate: {old_certificate.degree.degree_name} (UserDegree ID: {old_certificate.id})")
-                old_certificate.delete()
-                connection.commit()
+            if created:
+                print(f"Created new Degree entry: {certificate}")
+            else:
+                print(f"Degree already exists: {certificate}")
 
-            certificate_degree, created = Degree.objects.get_or_create(degree_name=certificate, degree_type=3, defaults={'hours_needed': 12})
-            if certificate_number:
-                certificate_degree.degree_number = certificate_number
-                certificate_degree.save()
-                
-            new_certificate = UserDegree.objects.create(user_student_id=user, degree=certificate_degree)
+                if certificate_degree.degree_name != certificate:
+                    certificate_degree.degree_name = certificate
+                    certificate_degree.save()
+                    print(f"Updated Degree name to: {certificate}")
+
+            # Associate the new certificate with the user
+            UserDegree.objects.create(user_student_id=user, degree=certificate_degree)
+            print(f"Added {certificate} to UserDegree")
             
         return redirect('profile')
 

@@ -204,8 +204,9 @@ body.profile main.container-fluid {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 1200px;
+    min-height: 100vh;
     font-family: Bebas Neue;
+    padding: 50px 0px;
 }
 
 .profile-container h1{

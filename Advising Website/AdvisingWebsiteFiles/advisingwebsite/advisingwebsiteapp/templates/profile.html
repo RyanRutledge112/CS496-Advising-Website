@@ -9,7 +9,9 @@
           {% endfor %}
       </ul>
   {% endif %}
-
+  <div class="alert alert-info" >
+    To avoid deleting your current degree info, leave the dropdowns (major, minor, concentration, certificate) as they are.
+  </div>
   <form method="POST" action="{% url 'update_profile' %}">
       {% csrf_token %}
 
@@ -33,7 +35,16 @@
 
         <!-- Major -->
         <div class="mb-3">
-          <label for="major" class="form-label">Major</label>
+          <label for="major" class="form-label">Which major are you changing?</label>
+          <!-- Display Majors -->
+          <div class="mb-3">
+            <select id="major" name="selected_major" class="form-select">
+              <option value="" selected>-- Select a Major --</option> 
+              {% for major in majors %}
+                  <option value="{{ major.degree_number }}">{{ major.degree_name }} ({{ major.degree_number }})</option>
+              {% endfor %}
+            </select>
+          </div>
           <input type="text" id="major" name="major" class="form-control" placeholder="Enter new major">
         </div>
 
@@ -45,13 +56,35 @@
 
          <!-- Concentration -->
          <div class="mb-3">
-          <label for="concentration" class="form-label">Concentration</label>
+          <label for="concentration" class="form-label">Which concentration are you changing?</label>
+          <div class="mb-3">
+            <select id="concentration" name="concentration" class="form-select">
+              <option value="" selected>-- Select a Concentration --</option>
+              <!-- Loop through concentrations by degree type (major and minor) -->
+              {% for degree_type, degree_concentrations in concentrations.items %}
+              <optgroup label="{{ degree_concentrations.0.degree.degree_name }}">
+                  {% for entry in degree_concentrations %}
+                      <option value="{{ entry.degree.id }}">{{ entry.concentration }} ({{ entry.degree.degree_name }})</option>
+                  {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+          </div>
           <input type="text" id="concentration" name="concentration" class="form-control" placeholder="Enter new concentration">
         </div>
 
         <!-- Minor -->
         <div class="mb-3">
-          <label for="minor" class="form-label">Minor</label>
+          <label for="minor" class="form-label">Which minor are you changing?</label>
+          <!-- Display Minors -->
+          <div class="mb-3">
+            <select id="minor" name="selected_minor" class="form-select">
+              <option value="" selected>-- Select a Minor --</option> 
+              {% for minor in minors %}
+                  <option value="{{ minor.degree_number }}">{{ minor.degree_name }} ({{ minor.degree_number }})</option>
+              {% endfor %}
+            </select>
+          </div>
           <input type="text" id="minor" name="minor" class="form-control" placeholder="Enter new minor">
         </div>
 
@@ -63,7 +96,17 @@
 
         <!-- Certificate -->
         <div class="mb-3">
-          <label for="certificate" class="form-label">Certificate</label>
+          <label for="certificate" class="form-label">Which certificate are you changing?</label>
+          <!-- Display Certificates -->
+          <div class="mb-3">
+            <select id="certificate" name="selected_certificate" class="form-select">
+              <option value="" selected>-- Select a Certficate --</option> 
+              {% for certificate in certificates %}
+                  <option value="{{ certificate.degree_number }}">{{ certificate.degree_name }} ({{ certificate.degree_number }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
           <input type="text" id="certificate" name="certificate" class="form-control" placeholder="Enter new certificate">
         </div>
 
