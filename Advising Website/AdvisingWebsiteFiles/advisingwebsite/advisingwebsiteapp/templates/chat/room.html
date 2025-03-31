@@ -23,8 +23,8 @@
     <div id="sidepanel">
       <div id="profile">
         <div class="wrap">
-          <img id="profile-img" src="http://emilcarlsson.se/assets/mikeross.png" class="offline" alt="" />
-          <p>Mike Ross</p>
+          <img id="profile-img" src="{{ profile_picture }}" class="offline" alt="" />
+          <p>{{ full_name|slice:"1:-1" }}</p>
           {% comment %}
           <i class="fa fa-chevron-down expand-button" aria-hidden="true"></i>
           <div id="status-options">
@@ -92,22 +92,11 @@
     </div>
     <div class="content">
       <div class="chat-profile">
-        <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
-        <p>{{ email|slice:"1:-1" }}</p>
-        <div class="social-media">
-          <i class="fa fa-envelope" aria-hidden="true"></i>
-        </div>
+        <img id="chat-image-display" alt="" />
+        <p id="chat-name-display"></p>
       </div>
       <div class="messages">
         <ul id="chat-log">
-            {% comment %}<li class="sent">
-            <img src="http://emilcarlsson.se/assets/mikeross.png" alt="" />
-            <p>How the hell am I supposed to get a jury to believe you when I am not even sure that I do?!</p>
-          </li>
-          <li class="replies">
-            <img src="http://emilcarlsson.se/assets/harveyspecter.png" alt="" />
-            <p>When you're backed against the wall, break the god damn thing down.</p>
-          </li> {% endcomment %}
         </ul>
       </div>
       <div class="message-input">
@@ -127,6 +116,7 @@
 <script>
     var email = {{ email }};
     var chat_id = {{ chat_id }};
+    var full_name = {{ full_name }};
 
     $(document).ready(function() {
       $('#chatParticipants').select2({
@@ -202,19 +192,20 @@
       var imgTag = document.createElement('img');
       var messageContainer = document.createElement('div');
       var messageText = document.createElement('p');
-
-      messageText.textContent = data.content;
-      messageText.innerHTML += '<br> <small>' + timeText + "</small>";
-      imgTag.src = 'http://emilcarlsson.se/assets/mikeross.png';
-
-      messageContainer.appendChild(messageText);
       
       if (author === email) {
         msgListTag.className = 'sent';
+        imgTag.src = '{{ profile_picture }}';
+        messageText.innerHTML += "<strong>" + full_name + "</strong> <br>"
       } else {
         msgListTag.className = 'replies';
+        imgTag.src = getProfilePicture(data['first_initial']);
+        messageText.innerHTML += "<strong>" + data['author_name'] + "</strong> <br>"
       }
 
+      messageText.innerHTML += data.content + '<br> <small>' + timeText + "</small>";
+
+      messageContainer.appendChild(messageText);
       msgListTag.appendChild(imgTag);
       msgListTag.appendChild(messageContainer);
       document.querySelector('#chat-log').appendChild(msgListTag);
@@ -258,6 +249,13 @@
                 chat.classList.add("active");
               }
           });
+
+          let activeChatElement = document.querySelector(`.chat[data-chat-id="${chat_id}"]`);
+          if(activeChatElement){
+            let chatName = activeChatElement.querySelector(".name").textContent;
+            document.getElementById("chat-name-display").textContent = chatName;
+            document.getElementById("chat-image-display").src = getProfilePicture(chatName.charAt(0).toLowerCase())
+          }
         }
     });
 
@@ -329,7 +327,7 @@
         
         newChatElement.innerHTML = `
             <div class="wrap">
-                <img src="${newChat['image_url']}" alt="${newChat['chat_name']}" />
+                <img src="${getProfilePicture(newChat['chat_name'].charAt(0).toLowerCase())}" alt="${newChat['chat_name']}" />
                 <div class="meta">
                     <p class="name">${newChat['chat_name']}</p>
                     <p class="preview">${newChat['last_message']}</p>
@@ -345,6 +343,40 @@
         if (chatElement) {
             setActiveChat(chatElement);
         }
+    }
+
+    function getProfilePicture(letter) {
+      //Stored generic profile pictures
+      const pictures = {
+          "a": "https://static-00.iconduck.com/assets.00/a-letter-icon-512x512-j1mhihj0.png",
+          "b": "https://static-00.iconduck.com/assets.00/b-letter-icon-512x512-90rzacib.png",
+          "c": "https://static-00.iconduck.com/assets.00/c-letter-icon-512x512-6mbkqdec.png",
+          "d": "https://static-00.iconduck.com/assets.00/d-letter-icon-512x512-r9lvazse.png",
+          "e": "https://static-00.iconduck.com/assets.00/e-letter-icon-512x512-dt9oea54.png",
+          "f": "https://static-00.iconduck.com/assets.00/f-letter-icon-512x512-xg6ht0dr.png",
+          "g": "https://static-00.iconduck.com/assets.00/g-letter-icon-512x512-6pmz2jsc.png",
+          "h": "https://static-00.iconduck.com/assets.00/h-letter-icon-512x512-x6qbinvo.png",
+          "i": "https://static-00.iconduck.com/assets.00/i-letter-icon-512x512-dmvytbti.png",
+          "j": "https://static-00.iconduck.com/assets.00/j-letter-icon-512x512-x0xc0g9u.png",
+          "k": "https://static-00.iconduck.com/assets.00/k-letter-icon-512x512-7bxyhgb3.png",
+          "l": "https://static-00.iconduck.com/assets.00/l-letter-icon-512x512-y3zwxhv2.png",
+          "m": "https://static-00.iconduck.com/assets.00/m-letter-icon-512x512-dfiryt7g.png",
+          "n": "https://static-00.iconduck.com/assets.00/n-letter-icon-512x512-52nch8s7.png",
+          "o": "https://static-00.iconduck.com/assets.00/o-letter-icon-512x512-sj7vxh47.png",
+          "p": "https://static-00.iconduck.com/assets.00/p-letter-icon-512x512-h5sw1to6.png",
+          "q": "https://static-00.iconduck.com/assets.00/q-letter-icon-512x512-30ov2ad6.png",
+          "r": "https://static-00.iconduck.com/assets.00/r-letter-icon-512x512-l2j45l27.png",
+          "s": "https://static-00.iconduck.com/assets.00/s-letter-icon-512x512-a5ximws6.png",
+          "t": "https://static-00.iconduck.com/assets.00/t-letter-icon-512x512-bg5zozzy.png",
+          "u": "https://static-00.iconduck.com/assets.00/u-letter-icon-512x512-131g3vfy.png",
+          "v": "https://static-00.iconduck.com/assets.00/v-letter-icon-512x512-hjcawsh7.png",
+          "w": "https://static-00.iconduck.com/assets.00/w-letter-icon-512x512-1nemv88f.png",
+          "x": "https://static-00.iconduck.com/assets.00/x-letter-icon-512x512-3xx065ts.png",
+          "y": "https://static-00.iconduck.com/assets.00/y-letter-icon-512x512-ob5jvz98.png",
+          "z": "https://static-00.iconduck.com/assets.00/z-letter-icon-512x512-puk3v0kb.png"
+      };
+      
+      return pictures[letter.toLowerCase()];
     }
 </script>
 </body>

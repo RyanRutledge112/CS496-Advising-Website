@@ -1,6 +1,7 @@
 import json
-from django.http import Http404, HttpResponseServerError, JsonResponse
-from django.shortcuts import get_object_or_404, render, redirect
+from django.http import Http404, HttpResponseRedirect, HttpResponseServerError, JsonResponse
+from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, update_session_auth_hash
 from django.contrib import messages as django_messages
@@ -551,8 +552,8 @@ def chathome(request):
 
     chats = [
         {
-            "name": user_chat.chat.chat_name,
-            "image_url": "http://emilcarlsson.se/assets/louislitt.png",
+            "name": user_chat.chat.chat_name.replace(request.user.get_full_name(), "").strip(', ').replace(" ,", ""),
+            "image_url": get_profile_picture(user_chat.chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", "")[0].lower()),
             "members": list(User.objects.filter(joined_chats__chat=user_chat.chat).values_list("id", flat=True)),
             "chat_id": user_chat.chat.id,
             "last_message": user_chat.chat.chat_messages.order_by('-date_sent').first().message_content
@@ -564,22 +565,26 @@ def chathome(request):
     return render(request, 'chat/room_base.html', {
         "chats": chats, 
         "email": mark_safe(json.dumps(request.user.email)), 
-        "users": other_users
+        "users": other_users,
+        "full_name": mark_safe(json.dumps(request.user.get_full_name())),
+        "profile_picture": get_profile_picture(user.get_short_name()[0].lower())
     })
 
 @login_required
 def room(request, chat_id):
     user = request.user
-    chat = get_object_or_404(Chat, id=chat_id)
-    if not ChatMember.objects.filter(user=user, chat=chat).exists():
-        return redirect('error_page')
+    chat = Chat.objects.filter(id=chat_id).first()
+    if not chat:
+        return HttpResponseRedirect(f"{reverse('error_page')}?exception={str('ERROR 404: Chat does not exist or could not be found.')}")
+    if not ChatMember.objects.filter(user=user, chat=chat).first():
+        return HttpResponseRedirect(f"{reverse('error_page')}?exception={str('ERROR 500: User is not a member of this chat.')}")
     user_chats = ChatMember.objects.filter(user=user).select_related("chat")
     other_users = User.objects.exclude(id=user.id)
 
     chats = [
         {
-            "name": user_chat.chat.chat_name,
-            "image_url": "http://emilcarlsson.se/assets/louislitt.png",
+            "name": user_chat.chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", ""),
+            "image_url": get_profile_picture(user_chat.chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", "")[0].lower()),
             "members": list(User.objects.filter(joined_chats__chat=user_chat.chat).values_list("id", flat=True)),
             "chat_id": user_chat.chat.id,
             "last_message": user_chat.chat.chat_messages.order_by('-date_sent').first().message_content
@@ -592,7 +597,9 @@ def room(request, chat_id):
         'chat_id': chat_id,
         "email": mark_safe(json.dumps(request.user.email)),
         "chats": chats,
-        "users": other_users
+        "users": other_users,
+        "full_name": mark_safe(json.dumps(request.user.get_full_name())),
+        "profile_picture": get_profile_picture(user.get_short_name()[0].lower())
     })
 
 @login_required
@@ -601,5 +608,39 @@ def check_chat_membership(request, chat_id):
     is_member = ChatMember.objects.filter(chat=chat, user=request.user).exists()
     return JsonResponse({'is_member': is_member})
 
-def error_page(request, exception=None):
-    return render(request, 'error.html', status=500)
+def error_page(request):
+    exception = request.GET.get('exception', 'An unknown error occurred.')
+    return render(request, 'error.html', {'exception' : exception})
+
+def get_profile_picture(letter):
+        #Stored generic profile pictures
+        pictures = {
+            "a" : "https://static-00.iconduck.com/assets.00/a-letter-icon-512x512-j1mhihj0.png",
+            "b" : "https://static-00.iconduck.com/assets.00/b-letter-icon-512x512-90rzacib.png",
+            "c" : "https://static-00.iconduck.com/assets.00/c-letter-icon-512x512-6mbkqdec.png",
+            "d" : "https://static-00.iconduck.com/assets.00/d-letter-icon-512x512-r9lvazse.png",
+            "e" : "https://static-00.iconduck.com/assets.00/e-letter-icon-512x512-dt9oea54.png",
+            "f" : "https://static-00.iconduck.com/assets.00/f-letter-icon-512x512-xg6ht0dr.png",
+            "g" : "https://static-00.iconduck.com/assets.00/g-letter-icon-512x512-6pmz2jsc.png",
+            "h" : "https://static-00.iconduck.com/assets.00/h-letter-icon-512x512-x6qbinvo.png",
+            "i" : "https://static-00.iconduck.com/assets.00/i-letter-icon-512x512-dmvytbti.png",
+            "j" : "https://static-00.iconduck.com/assets.00/j-letter-icon-512x512-x0xc0g9u.png",
+            "k" : "https://static-00.iconduck.com/assets.00/k-letter-icon-512x512-7bxyhgb3.png",
+            "l" : "https://static-00.iconduck.com/assets.00/l-letter-icon-512x512-y3zwxhv2.png",
+            "m" : "https://static-00.iconduck.com/assets.00/m-letter-icon-512x512-dfiryt7g.png",
+            "n" : "https://static-00.iconduck.com/assets.00/n-letter-icon-512x512-52nch8s7.png",
+            "o" : "https://static-00.iconduck.com/assets.00/o-letter-icon-512x512-sj7vxh47.png",
+            "p" : "https://static-00.iconduck.com/assets.00/p-letter-icon-512x512-h5sw1to6.png",
+            "q" : "https://static-00.iconduck.com/assets.00/q-letter-icon-512x512-30ov2ad6.png",
+            "r" : "https://static-00.iconduck.com/assets.00/r-letter-icon-512x512-l2j45l27.png",
+            "s" : "https://static-00.iconduck.com/assets.00/s-letter-icon-512x512-a5ximws6.png",
+            "t" : "https://static-00.iconduck.com/assets.00/t-letter-icon-512x512-bg5zozzy.png",
+            "u" : "https://static-00.iconduck.com/assets.00/u-letter-icon-512x512-131g3vfy.png",
+            "v" : "https://static-00.iconduck.com/assets.00/v-letter-icon-512x512-hjcawsh7.png",
+            "w" : "https://static-00.iconduck.com/assets.00/w-letter-icon-512x512-1nemv88f.png",
+            "x" : "https://static-00.iconduck.com/assets.00/x-letter-icon-512x512-3xx065ts.png",
+            "y" : "https://static-00.iconduck.com/assets.00/y-letter-icon-512x512-ob5jvz98.png",
+            "z" : "https://static-00.iconduck.com/assets.00/z-letter-icon-512x512-puk3v0kb.png"
+        }
+        profile_picture = pictures[letter]
+        return profile_picture

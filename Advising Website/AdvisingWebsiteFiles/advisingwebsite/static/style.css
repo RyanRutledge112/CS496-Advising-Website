@@ -577,6 +577,18 @@ body {
   background: #435f7a;
   color: #f5f5f5;
 }
+
+#frame .content .messages ul li p strong {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+/*#frame .content .messages ul li.replies p strong {
+  font-size: 1.2em;
+  font-weight: bold;
+  float: right;
+}*/
+
 #frame .content .messages ul li.sent span {
   float: left;
 }

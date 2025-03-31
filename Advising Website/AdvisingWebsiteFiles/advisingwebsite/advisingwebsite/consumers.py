@@ -57,7 +57,6 @@ class ChatConsumer(WebsocketConsumer):
             'chat': {
                 'chat_id': new_chat.id,
                 'chat_name': new_chat.chat_name,
-                'image_url': 'http://emilcarlsson.se/assets/louislitt.png',
                 'last_message': ''
             }
         })
@@ -71,8 +70,10 @@ class ChatConsumer(WebsocketConsumer):
     def message_to_json(self, message):
         return {
             'author': message.sent_by_member.user.email.strip('"'),
+            'author_name': message.sent_by_member.user.get_full_name(),
             'content': message.message_content,
-            'date_sent': str(message.date_sent)
+            'date_sent': str(message.date_sent),
+            'first_initial': message.sent_by_member.user.get_short_name()[0].lower()
         }
 
     commands = {
@@ -114,8 +115,9 @@ class ChatConsumer(WebsocketConsumer):
     def receive(self, text_data):
         data = json.loads(text_data)
 
-        if not self.is_member(self.scope["user"], self.chat_id):
-            self.send(text_data=json.dumps({'error': 'Unauthorized'}))
+        if not self.chat_id == "home":
+            if not self.is_member(self.scope["user"], self.chat_id):
+                self.send(text_data=json.dumps({'error': 'Unauthorized'}))
 
         self.commands[data['command']](self, data)
         
