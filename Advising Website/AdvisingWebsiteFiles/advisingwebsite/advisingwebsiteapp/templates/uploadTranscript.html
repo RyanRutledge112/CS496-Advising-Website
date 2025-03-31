@@ -9,6 +9,15 @@
             <input class="form-control" type="file" id="formFile" name="pdfFile" accept=".pdf" required>
         </div>
         <div class="col-12">
+            <label for="selectTerm" class="form-label">Which term are you planning for?</label>
+            <select class="form-select" id="selectT" name="term" required>
+                <option value="spring">Spring</option>
+                <option value="summer">Summer</option>
+                <option value="fall">Fall</option>
+                <option value="winter">Winter</option>
+            </select>
+        </div>
+        <div class="col-12">
             <label for="inputCreditHours" class="form-label">Input the number of credit hours you are comfortable taking:</label>
             <input type="number" class="form-control" id="inputCreditHours" placeholder="15">
         </div>
