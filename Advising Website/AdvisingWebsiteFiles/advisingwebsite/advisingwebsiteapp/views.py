@@ -47,21 +47,27 @@ def register(request):
         second_major_number = request.POST.get('second_major_number', '')
         third_major = request.POST.get('third_major', '')
         third_major_number = request.POST.get('third_major_number', '')
+        concentration = request.POST.get('concentration', '')
+        second_concentration = request.POST.get('second_concentration', '')
+        third_concentration = request.POST.get('third_concentration', '')
         minor = request.POST.get('minor', '')
         minor_number = request.POST.get('minor_number', '')
         second_minor = request.POST.get('second_minor', '')
         second_minor_number = request.POST.get('second_minor_number', '')
         third_minor = request.POST.get('third_minor', '')
         third_minor_number = request.POST.get('third_minor_number', '')
-        concentration = request.POST.get('concentration', '')
-        second_concentration = request.POST.get('second_concentration', '')
-        third_concentration = request.POST.get('third_concentration', '')
+        minor_concentration = request.POST.get('minor_concentration', '')
+        second_minor_concentration = request.POST.get('second_minor_concentration', '')
+        third_minor_concentration = request.POST.get('third_minor_concentration', '')
         certificate = request.POST.get('certificate', '')
         certificate_number = request.POST.get('certificate_number', '')
         second_certificate = request.POST.get('second_certificate', '')
         second_certificate_number = request.POST.get('second_certificate_number', '')
         third_certificate = request.POST.get('third_certificate', '')
         third_certificate_number = request.POST.get('third_certificate_number', '')
+        certificate_concentration = request.POST.get('certificate_concentration', '')
+        second_certificate_concentration = request.POST.get('second_certificate_concentration', '')
+        third_certificate_concentration = request.POST.get('third_certificate_concentration', '')
 
         # Set default values for is_student and is_advisor
         is_student = True  # Default to True (most users are students)
@@ -132,7 +138,7 @@ def register(request):
             minor_degree, created = Degree.objects.get_or_create(
                 degree_name=minor,
                 degree_number=minor_number,
-                concentration=concentration,
+                concentration=minor_concentration,
                 hours_needed=21,
                 degree_type=2
             )
@@ -144,7 +150,7 @@ def register(request):
             second_minor_degree, created = Degree.objects.get_or_create(
                 degree_name=second_minor,
                 degree_number=second_minor_number,
-                concentration=concentration,
+                concentration=second_minor_concentration,
                 hours_needed=21,
                 degree_type=2
             )
@@ -156,7 +162,7 @@ def register(request):
             third_minor_degree, created = Degree.objects.get_or_create(
                 degree_name=third_minor,
                 degree_number=third_minor_number,
-                concentration=concentration,
+                concentration=third_minor_concentration,
                 hours_needed=21,
                 degree_type=2
             )
@@ -167,7 +173,7 @@ def register(request):
             certificate_degree, created = Degree.objects.get_or_create(
                 degree_name=certificate,
                 degree_number=certificate_number,
-                concentration=certificate,
+                concentration=certificate_concentration,
                 hours_needed=12,
                 degree_type=3
             )
@@ -179,7 +185,7 @@ def register(request):
             second_certificate_degree, created = Degree.objects.get_or_create(
                 degree_name=second_certificate,
                 degree_number=second_certificate_number,
-                concentration=concentration,
+                concentration=second_certificate_concentration,
                 hours_needed=12,
                 degree_type=3
             )
@@ -191,7 +197,7 @@ def register(request):
             third_certificate_degree, created = Degree.objects.get_or_create(
                 degree_name=third_certificate,
                 degree_number=third_certificate_number,
-                concentration=concentration,
+                concentration=third_certificate_concentration,
                 hours_needed=12,
                 degree_type=3
             )
