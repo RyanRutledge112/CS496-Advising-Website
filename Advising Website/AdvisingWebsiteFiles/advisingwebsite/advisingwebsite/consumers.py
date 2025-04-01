@@ -3,6 +3,8 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import json
 from advisingwebsiteapp.models import Message, Chat, ChatMember
+from django.db.models import OuterRef, Subquery, Value, TextField
+from django.db.models.functions import Coalesce
 
 User = get_user_model()
 
@@ -75,11 +77,27 @@ class ChatConsumer(WebsocketConsumer):
             'date_sent': str(message.date_sent),
             'first_initial': message.sent_by_member.user.get_short_name()[0].lower()
         }
+    
+    def search_chats(self, data):
+        user = User.objects.filter(email=data['email']).first()
+
+        last_message_subquery = Message.objects.filter(chat=OuterRef('id')).order_by('-date_sent').values('message_content')[:1]
+
+        filtered_chats = Chat.objects.filter(members__user=user, 
+                                        chat_name__icontains=data['message']).annotate(
+                                            last_message=Coalesce(Subquery(last_message_subquery, output_field=TextField()), Value("", output_field=TextField()))
+                                        ).values('id', 'chat_name', 'last_message')
+
+        return self.send_message({
+            'command': 'filter_chats',
+            'chats': list(filtered_chats)
+        })
 
     commands = {
         'fetch_messages': fetch_messages,
         'new_message': new_message,
-        'new_chat': new_chat
+        'new_chat': new_chat,
+        "search_chats": search_chats
     }
 
     def connect(self):

@@ -48,7 +48,7 @@
       </div>
       <div id="search">
         <label for=""><i class="fa fa-search" aria-hidden="true"></i></label>
-        <input type="text" placeholder="Search chats..." />
+        <input type="text" id="search-input" placeholder="Type the chat name and press enter to search..." />
       </div>
       <div id="chats">
         <ul>
@@ -146,6 +146,8 @@
           var newChat = data['chat'];
           addChatToSidebar(newChat);
           setActiveChatById(newChat['chat_id'])
+        } else if (data['command'] === 'filter_chats'){
+          updateShownChats(data);
         }
     };
 
@@ -211,6 +213,35 @@
       document.querySelector('#chat-log').appendChild(msgListTag);
     };
 
+    function updateShownChats(data) {
+      var chatList = document.querySelector('#chats ul');
+      chatList.innerHTML = "";
+
+      data['chats'].forEach(chat => {
+          var newChatElement = document.createElement('li');
+          var activeChatId = localStorage.getItem("activeChat");
+
+          newChatElement.classList.add('chat');
+          newChatElement.classList.toggle('active', chat['id'] === Number(activeChatId));
+          newChatElement.setAttribute('data-chat-id', chat['id']);
+          newChatElement.setAttribute('onclick', 'setActiveChat(this)');
+
+          chat['chat_name'] = chat['chat_name'].replace(full_name, "").replace(/^,|,$/g, "").replace(/\s*,\s*/g, ", ").trim();
+
+          newChatElement.innerHTML = `
+              <div class="wrap">
+                  <img src="${getProfilePicture(chat['chat_name'].charAt(0).toLowerCase())}" alt="${chat['chat_name']}" />
+                  <div class="meta">
+                      <p class="name">${chat['chat_name']}</p>
+                      <p class="preview">${chat['last_message'] || 'No messages yet'}</p>
+                  </div>
+              </div>
+          `;
+
+          chatList.appendChild(newChatElement);
+      });
+    }
+
     function setActiveChat(clickedChat) {
         let chat_id = clickedChat.getAttribute('data-chat-id');
 
@@ -238,6 +269,16 @@
         })
         .catch(error => console.error("Error checking chat membership: ", error));
     }
+
+    document.querySelector('#search-input').onkeyup = function(e) {
+      var messageInputDom = document.getElementById('search-input');
+      var message = messageInputDom.value;
+      chatSocket.send(JSON.stringify({
+          'command': 'search_chats',
+          'email': email,
+          'message': message,
+      }));
+    };
 
     document.addEventListener("DOMContentLoaded", function() {
       let savedActiveChat= localStorage.getItem("activeChat");

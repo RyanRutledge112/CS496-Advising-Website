@@ -48,7 +48,7 @@
       </div>
       <div id="search">
         <label for=""><i class="fa fa-search" aria-hidden="true"></i></label>
-        <input type="text" placeholder="Search chats..." />
+        <input id="search-input" type="text" placeholder="Type the chat name and press enter to search..." />
       </div>
       <div id="chats">
         <ul>
@@ -114,6 +114,7 @@
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
     var email = {{ email }};
+    var full_name = {{ full_name }};
 
     $(document).ready(function() {
       $('#chatParticipants').select2({
@@ -132,8 +133,20 @@
           var newChat = data['chat'];
           addChatToSidebar(newChat);
           setActiveChatById(newChat['chat_id'])
+        } else if (data['command'] === 'filter_chats'){
+          updateShownChats(data);
         }
     }
+
+    document.querySelector('#search-input').onkeyup = function(e) {
+      var messageInputDom = document.getElementById('search-input');
+      var message = messageInputDom.value;
+      chatSocket.send(JSON.stringify({
+          'command': 'search_chats',
+          'email': email,
+          'message': message,
+      }));
+    };
 
     function setActiveChat(clickedChat) {
       document.querySelectorAll('.chat').forEach(chat => {
@@ -146,6 +159,32 @@
       localStorage.setItem("activeChat", chat_id)
 
       window.location.href = `/chat/${chat_id}`;
+    }
+
+    function updateShownChats(data) {
+      var chatList = document.querySelector('#chats ul');
+      chatList.innerHTML = "";
+
+      data['chats'].forEach(chat => {
+          var newChatElement = document.createElement('li');
+          newChatElement.classList.add('chat');
+          newChatElement.setAttribute('data-chat-id', chat['id']);
+          newChatElement.setAttribute('onclick', 'setActiveChat(this)');
+
+          chat['chat_name'] = chat['chat_name'].replace(full_name, "").replace(/^,|,$/g, "").replace(/\s*,\s*/g, ", ").trim();
+
+          newChatElement.innerHTML = `
+              <div class="wrap">
+                  <img src="${getProfilePicture(chat['chat_name'].charAt(0).toLowerCase())}" alt="${chat['chat_name']}" />
+                  <div class="meta">
+                      <p class="name">${chat['chat_name']}</p>
+                      <p class="preview">${chat['last_message'] || 'No messages yet'}</p>
+                  </div>
+              </div>
+          `;
+
+          chatList.appendChild(newChatElement);
+      });
     }
 
     document.addEventListener("DOMContentLoaded", function() {
