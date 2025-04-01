@@ -1,6 +1,6 @@
 import json
-from django.http import Http404, HttpResponseRedirect, HttpResponseServerError, JsonResponse
-from django.shortcuts import render, redirect
+from django.http import Http404, HttpResponseRedirect, HttpResponseServerError, JsonResponse, HttpResponse
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, update_session_auth_hash
@@ -15,8 +15,10 @@ from advisingwebsiteapp.models import User, Degree, UserDegree
 from .scraptranscript import parse_transcript, store_user_degree
 from .majorreqs import main as extract_major_requirements
 from .majorreqs import get_user_major
+from .recommender import recommend_schedule
 import os
 import re
+import csv
 
 def home(request):
     return render(request, 'home.html', {})
@@ -263,7 +265,8 @@ def messages(request):
 def upload_transcript(request):
     if request.method == "POST" and request.FILES.get("pdfFile"):
         uploaded_file = request.FILES["pdfFile"]
-        credit_hours = request.POST.get("inputCreditHours", "15")
+        credit_hours = int(request.POST.get("inputCreditHours", "15"))
+        selected_term = request.POST.get("term", "").lower()
         file_path = f"uploads/{uploaded_file.name}"
 
         os.makedirs("uploads", exist_ok=True)
@@ -271,33 +274,68 @@ def upload_transcript(request):
         with open(file_path, "wb+") as destination:
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
-        
-        processed_data = parse_transcript(file_path)
-        print(f"DEBUG: Transcript processed: {processed_data}")
 
-        store_user_degree(processed_data)
-
-        # Get user's student_id and fetch major
+        # Call your new helper function here
         try:
-            student_id = request.user.student_id 
+            results = process_and_recommend_courses(
+                request.user,
+                file_path,
+                selected_term,
+                credit_hours
+            )
         except AttributeError:
-            return render(request, "uploadTranscript.html", {"error": "Student ID not found in user profile."})
+            return render(request, "uploadTranscript.html", {
+                "error": "Student ID not found in user profile."
+            })
+        
+        # store recommendations in session for later download
+        request.session['recommendations'] = [
+            {'course_name': c.course_name, 'hours': c.hours} for c in results["recommendations"]
+        ]
 
-        # Get major name
-        major_name = get_user_major(student_id)
-
-        if major_name:
-            major_requirements = extract_major_requirements(student_id)
-        else:
-            # print("DEBUG: No major found for this student")
-            major_requirements = None
-
-        return render(request, "uploadTranscript.html", {
-            "transcript_data": processed_data,
-            "major_requirements": major_requirements
+        return render(request, "recommendedClasses.html", {
+            "transcript_data": results["transcript_data"],
+            "major_requirements": results["major_requirements"],
+            "recommendations": results["recommendations"],
+            "credit_hours": credit_hours,
+            "selected_term": selected_term
         })
 
     return render(request, 'uploadTranscript.html')
+
+def process_and_recommend_courses(user, file_path, selected_term, max_hours):
+    processed_data = parse_transcript(file_path)
+    store_user_degree(processed_data)
+
+    recommendations = recommend_schedule(
+        user,
+        processed_data,
+        selected_term=selected_term,
+        max_hours=max_hours
+    )
+
+    major_requirements = extract_major_requirements(user.student_id)
+
+    return {
+        "transcript_data": processed_data,
+        "major_requirements": major_requirements,
+        "recommendations": recommendations
+    }
+
+def download_recommendations(request):
+    recommendations = request.session.get('recommendations', [])
+
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="recommendations.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Course Name', 'Credit Hours'])
+
+    for course in recommendations:
+        writer.writerow([course['course_name'], course['hours']])
+
+    return response
 
 def profile(request):
     user = request.user
