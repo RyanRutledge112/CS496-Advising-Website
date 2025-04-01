@@ -16,8 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from advisingwebsiteapp import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('advisingwebsiteapp.urls')),
+    path('upload/', views.upload_transcript, name='uploadTranscript'),
+    path('download_recommendations/', views.download_recommendations, name='download_recommendations'),
 ]
