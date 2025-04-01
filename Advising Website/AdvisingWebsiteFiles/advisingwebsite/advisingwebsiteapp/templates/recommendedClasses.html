@@ -1,4 +1,40 @@
 {% extends 'base.html' %}
-{% block content %}
 
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+
+<body>
+    <div>
+        <div>
+            <div>
+                <h2>Recommended Courses for {{ selected_term|title }}</h2>
+                <h5>Total Credit Hours: {{ credit_hours }}</h5>
+            </div>
+
+            <div>
+                <ul>
+                    {% for course in recommendations %}
+                    <li>
+                        <strong>{{ course.course_name }}</strong>
+                        {{ course.hours }} hrs
+                    </li>
+                    {% empty %}
+                    <li>No recommendations available.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div>
+                <form action="{% url 'download_recommendations' %}" method="get">
+                    <button type="submit">
+                        Download Recommendations
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
 {% endblock %}
