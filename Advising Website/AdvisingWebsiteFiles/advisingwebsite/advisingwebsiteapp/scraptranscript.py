@@ -114,6 +114,9 @@ def parse_transcript(file_path):
                     # 8-column layout
                     elif len(row) == 8 and course.isdigit() and re.match(r"^[A-Z]{2,5}$", subject):
                         parse_course(subject, course, row[2], row[3], row[4], row[5], row[6])
+                    # 7-column layout 
+                    elif len(row) == 7 and course.isdigit() and re.match(r"^[A-Z]{2,5}$", subject):
+                        parse_course(subject, course, "", row[2], row[3], row[4], row[5])
                     # 5-column layout 
                     elif len(row) == 5 and course.isdigit() and re.match(r"^[A-Z]{2,5}$", subject):
                         parse_course(subject, course, row[2], row[3], "", row[4], "0")
