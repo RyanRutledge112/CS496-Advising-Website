@@ -113,30 +113,32 @@ class Course(models.Model):
     hours = models.IntegerField()
     is_colonade = models.BooleanField()
     colonade_id = models.CharField(max_length=255, null=True)
+    
+    corequisites = models.TextField(null=True, blank=True)
+    restrictions = models.TextField(null=True, blank=True)
+    recent_terms = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        if(self.is_colonade == True):
-            return f'Name: {self.course_name}\nHours required to graduate: {self.hours} hours\nColonade requirement for: {self.colonade_id}'.strip()
-        
-        return f'Name: {self.course_name}\nHours required to graduate: {self.hours} hours'.strip()
-
-
+        result = f'Name: {self.course_name}\nHours required to graduate: {self.hours} hours'
+        if self.is_colonade:
+            result += f'\nColonade requirement for: {self.colonade_id}'
+        return result.strip()
 class DegreeCourse(models.Model):
     degree = models.ForeignKey(Degree, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     is_elective = models.BooleanField()
     is_required = models.BooleanField()
+    group_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        str = f'{self.course.course_name}'
-        if(self.is_elective == True and self.is_required == True):
-            str+= f' is an elective and is a requirement for {self.degree.degree_name}'
-        elif(self.is_elective == True):
-            str+= f' is an elective for {self.degree.degree_name}'
-        elif(self.is_required == True):
-            str+= f' is a requirement for {self.degree.degree_name}'
-
-        return str
+        desc = f'{self.course.course_name}'
+        if self.is_elective and self.is_required:
+            desc += f' is an elective and a requirement for {self.degree.degree_name}'
+        elif self.is_elective:
+            desc += f' is an elective for {self.degree.degree_name}'
+        elif self.is_required:
+            desc += f' is a requirement for {self.degree.degree_name}'
+        return desc
 
 class Prerequisites(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="prerequisites")
