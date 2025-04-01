@@ -275,7 +275,6 @@ def upload_transcript(request):
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
 
-        # Call your new helper function here
         try:
             results = process_and_recommend_courses(
                 request.user,
