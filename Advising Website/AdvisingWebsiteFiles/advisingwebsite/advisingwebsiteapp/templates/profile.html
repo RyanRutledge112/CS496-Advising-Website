@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="profile-container">
-  <h1>{{ user.first_name}} {{user.last_name}}</h1>
+  <h1><strong>{{ user.first_name}} {{user.last_name}}</strong></h1>
   {% if messages %}
       <ul class="messages">
           {% for message in messages %}
@@ -10,115 +10,100 @@
       </ul>
   {% endif %}
   <div class="alert alert-info" >
-    To avoid deleting your current degree info, leave the dropdowns (major, minor, concentration, certificate) as they are.
+    To avoid deleting your current degree info, leave the dropdown as is.
   </div>
   <form method="POST" action="{% url 'update_profile' %}">
       {% csrf_token %}
 
       <!-- First Name -->
       <div class="mb-3">
-          <label for="first_name" class="form-label">First Name</label>
-          <input type="text" id="first_name" name="first_name" class="form-control" placeholder="Enter new first name">
-        </div>
+        <label for="first_name" class="form-label">First Name</label>
+        <input type="text" id="first_name" name="first_name" class="form-control" placeholder="Enter new first name">
+      </div>
     
-        <!-- Last Name -->
-        <div class="mb-3">
-          <label for="last_name" class="form-label">Last Name</label>
-          <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Enter new last name">
-        </div>
+      <!-- Last Name -->
+      <div class="mb-3">
+        <label for="last_name" class="form-label">Last Name</label>
+        <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Enter new last name">
+      </div>
     
-        <!-- Email -->
-        <div class="mb-3">
-          <label for="email" class="form-label">Email</label>
-          <input type="email" id="email" name="email" class="form-control" placeholder="Enter new email">
-        </div>
+      <!-- Email -->
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="Enter new email">
+      </div>
 
-        <!-- Major -->
-        <div class="mb-3">
-          <label for="major" class="form-label">Which major are you changing?</label>
-          <!-- Display Majors -->
-          <div class="mb-3">
-            <select id="major" name="selected_major" class="form-select">
-              <option value="" selected>-- Select a Major --</option> 
-              {% for major in majors %}
-                  <option value="{{ major.degree_number }}">{{ major.degree_name }} ({{ major.degree_number }})</option>
-              {% endfor %}
-            </select>
-          </div>
-          <input type="text" id="major" name="major" class="form-control" placeholder="Enter new major">
-        </div>
-
-        <!-- Major Number-->
-        <div class="mb-3">
-          <label for="major_number" class="form-label">Major Reference Number</label>
-          <input type="text" id="major_number" name="major_number" maxlength="6" minlength="3" class="form-control" placeholder="Enter new reference number">
-        </div>
-
-         <!-- Concentration -->
-         <div class="mb-3">
-          <label for="concentration" class="form-label">Which concentration are you changing?</label>
-          <div class="mb-3">
-            <select id="concentration" name="concentration" class="form-select">
-              <option value="" selected>-- Select a Concentration --</option>
-              <!-- Loop through concentrations by degree type (major and minor) -->
-              {% for degree_type, degree_concentrations in concentrations.items %}
-              <optgroup label="{{ degree_concentrations.0.degree.degree_name }}">
-                  {% for entry in degree_concentrations %}
-                      <option value="{{ entry.degree.id }}">{{ entry.concentration }} ({{ entry.degree.degree_name }})</option>
-                  {% endfor %}
-              </optgroup>
+      <!-- Select Degree to Delete/Change -->
+      <div class="mb-3">
+        <label class="form-label">Select your degree that you are deleting/changing</label>
+        <select id="current_degree" name="current_degree" class="form-select">
+            <option value="" selected>-- Select Your Current Degree --</option>
+            {% for user_degree in user_degrees %}
+                <option value="{{ user_degree.degree.degree_number }}">
+                    {{ user_degree.degree.degree_name }} ({{ user_degree.degree.degree_number }}) - Concentration: {{ user_degree.degree.concentration }}
+                </option>
             {% endfor %}
-          </select>
-          </div>
-          <input type="text" id="concentration" name="concentration" class="form-control" placeholder="Enter new concentration">
-        </div>
+        </select>
+      </div>
 
-        <!-- Minor -->
-        <div class="mb-3">
-          <label for="minor" class="form-label">Which minor are you changing?</label>
-          <!-- Display Minors -->
-          <div class="mb-3">
-            <select id="minor" name="selected_minor" class="form-select">
-              <option value="" selected>-- Select a Minor --</option> 
-              {% for minor in minors %}
-                  <option value="{{ minor.degree_number }}">{{ minor.degree_name }} ({{ minor.degree_number }})</option>
-              {% endfor %}
-            </select>
-          </div>
-          <input type="text" id="minor" name="minor" class="form-control" placeholder="Enter new minor">
-        </div>
+      <!-- Select New Degree -->
+      <div class="mb-3">
+        <label class="form-label">Select your new degree</label>
+        <input type="text" id="degreeSearch" class="form-control" placeholder="Search for a degree..." onkeyup="filterDegrees()">
+        <select id="degrees" name="degrees" class="form-control">
+          <option value="" selected>-- Select a New Degree --</option>
+            {% for category, degrees in grouped_degrees.items %}
+                <optgroup label="{{ category }}">
+                    {% for degree in degrees %}
+                        <option value="{{ degree.id }}">
+                            {{ degree.degree_name }} -
+                            <br> Degree Reference Number: {{ degree.degree_number }} 
+                            {% if degree.concentration %} - <br> Concentration: {{ degree.concentration }} {% endif %}
+                        </option>
+                    {% endfor %}
+                </optgroup>
+            {% endfor %}
+        </select>
+    </div>
 
-        <!-- Minor Number -->
-        <div class="mb-3">
-          <label for="minor_number" class="form-label">Minor Reference Number</label>
-          <input type="text" id="minor_number" name="minor_number" maxlength="6" minlength="3" class="form-control" placeholder="Enter new reference number">
-        </div>
-
-        <!-- Certificate -->
-        <div class="mb-3">
-          <label for="certificate" class="form-label">Which certificate are you changing?</label>
-          <!-- Display Certificates -->
-          <div class="mb-3">
-            <select id="certificate" name="selected_certificate" class="form-select">
-              <option value="" selected>-- Select a Certficate --</option> 
-              {% for certificate in certificates %}
-                  <option value="{{ certificate.degree_number }}">{{ certificate.degree_name }} ({{ certificate.degree_number }})</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <input type="text" id="certificate" name="certificate" class="form-control" placeholder="Enter new certificate">
-        </div>
-
-        <!-- Certificate Number -->
-        <div class="mb-3">
-          <label for="certificate_number" class="form-label">Certificate Reference Number</label>
-          <input type="text" id="certificate_number" name="certificate_number" maxlength="6" minlength="3" class="form-control" placeholder="Enter new reference number">
-        </div>
-    
-        <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary">Update</button>
-        <p>Want to change your password?<a href="{% url 'changePassword' %}"> Change Password</a></p>
+      <!-- Submit Button -->
+      <button type="submit" class="btn btn-primary">Update</button>
+      <p>Want to change your password?<a href="{% url 'changePassword' %}"> Change Password</a></p>
   </form>
 </div>
+
+<script>
+  // JavaScript to toggle the second major fields when the checkbox is checked
+  document.addEventListener("DOMContentLoaded", function () {
+    const degreeSelect = document.getElementById("degrees");
+
+    degreeSelect.addEventListener("change", function() {
+        const selectedOptions = [...degreeSelect.selectedOptions];
+    });
+});
+
+function filterDegrees() {
+    let input = document.getElementById("degreeSearch").value.toLowerCase();
+    let select = document.getElementById("degrees");
+    let optgroups = select.getElementsByTagName("optgroup");
+
+    for (let optgroup of optgroups) {
+        let options = optgroup.getElementsByTagName("option");
+        let visibleOption = false;
+
+        for (let option of options) {
+            let text = option.innerText.toLowerCase();
+            if (text.includes(input)) {
+                option.style.display = "";
+                visibleOption = true;
+            } else {
+                option.style.display = "none";
+            }
+        }
+
+        // Hide optgroup if it has no visible options
+        optgroup.style.display = visibleOption ? "" : "none";
+    }
+}
+</script>
 {% endblock %}
