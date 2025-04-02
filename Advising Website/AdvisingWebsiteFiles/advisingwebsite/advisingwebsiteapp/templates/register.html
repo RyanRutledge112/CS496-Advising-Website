@@ -56,317 +56,60 @@
       <input type="text" class="form-control" id="student_id" name="student_id" pattern="\d{9}" 
       maxlength="9" minlength="9" title="Student ID must be exactly 9 digits." required>
     </div>
-    <div class="mb-3">
-      <label for="major" class="form-label">Major: </label>
-      <input type="text" class="form-control" id="major" name="major">
-    </div>
-    <div class="mb-3">
-      <label for="major_number" class="form-label">Major Reference Number: <span style="color: red;">*</span><span id="majorNumberInfo" 
-        style="
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        line-height: 20px;
-        text-align: center;
-        border: 1px solid blue;
-        border-radius: 50%;
-        color: blue;
-        font-weight: bold;
-        cursor: pointer;
-        font-size: 14px;
-        margin-left: 5px;"
-        onclick="showMajorNumberInfo()">?</span></label>
-      <input type="text" class="form-control" id="major_number" name="major_number" maxlength="6" minlength="3" required>
-    </div>
-    <!--Concentration-->
-    <div class="mb-3">
-      <label for="concentration" class="form-label">Concentration:</label>
-      <input type="text" class="form-control" id="concentration" name="concentration">
-    </div>
-    <!-- Add double Major Checkbox -->
-    <div class="mb-3">
-      <input type="checkbox" id="double_major" name="double_major">
-      <label for="double_major">Double Major?</label>
-    </div>
-    
-    <div id="second_major_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="second_major" class="form-label">Second Major:</label>
-        <input type="text" class="form-control" id="second_major" name="second_major">
-      </div>
-      <div class="mb-3">
-        <label for="second_major_number" class="form-label">Second Major Reference Number:</label>
-        <input type="text" class="form-control" id="second_major_number" name="second_major_number" maxlength="6" minlength="3">
-      </div>
-      <!--Concentration for double major-->
-      <div id="second_concentration_fields" style="display: none;">
-        <div class="mb-3">
-          <label for="second_concentration" class="form-label">Second Major Concentration:</label>
-          <input type="text" class="form-control" id="second_concentration" name="second_concentration">
-        </div>
-      </div>
-    </div>
-    <!-- Add Triple Major Checkbox -->
-    <div class="mb-3">
-      <input type="checkbox" id="triple_major" name="triple_major">
-      <label for="triple_major">Triple Major?</label>
-    </div>
 
-    <div id="third_major_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="third_major" class="form-label">Third Major:</label>
-        <input type="text" class="form-control" id="third_major" name="third_major">
-      </div>
-      <div class="mb-3">
-        <label for="third_major_number" class="form-label">Third Major Reference Number:</label>
-        <input type="text" class="form-control" id="third_major_number" name="third_major_number" maxlength="6" minlength="3">
-      </div>
-    </div>
-    <!--Triple Major Concentration-->
-    <div id="third_concentration_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="third_concentration" class="form-label">Third Major Concentration:</label>
-        <input type="text" class="form-control" id="third_concentration" name="third_concentration">
-      </div>
-    </div>
-    <!--Minor-->
     <div class="mb-3">
-      <label for="minor" class="form-label">Minor:</label>
-      <input type="text" class="form-control" id="minor" name="minor">
-    </div>
-    <div class="mb-3">
-      <label for="minor_number" class="form-label">Minor Reference Number:</label>
-      <input type="text" class="form-control" id="minor_number" name="minor_number" maxlength="6" minlength="3">
-    </div>
-    <div class="mb-3">
-      <label for="minor_concentration" class="form-label">Concentration for Minor:</label>
-      <input type="text" class="form-control" id="minor_concentration" name="minor_concentration">
-    </div>
-    <!-- Add double Minor Checkbox -->
-    <div class="mb-3">
-      <input type="checkbox" id="double_minor" name="double_minor">
-      <label for="double_major">Double Minor?</label>
-    </div>
-    
-    <div id="second_minor_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="second_minor" class="form-label">Second Minor:</label>
-        <input type="text" class="form-control" id="second_minor" name="second_minor">
+      <label for="degrees" class="form-label">Select Your Degrees:</label>
+      <div class="tip">
+        <small class="form-text text-muted">Hold Ctrl (Cmd on Mac) to select multiple. Max: 6.</small>
       </div>
-      <div class="mb-3">
-        <label for="second_minor_number" class="form-label">Second Minor Reference Number:</label>
-        <input type="text" class="form-control" id="second_minor_number" name="second_minor_number" maxlength="6" minlength="3">
-      </div>
-      <div id="second_minor_concentration_fields" style="display: none;">
-        <div class="mb-3">
-          <label for="second_minor_concentration" class="form-label">Double Minor Concentration:</label>
-          <input type="text" class="form-control" id="second_minor_concentration" name="second_minor_concentration">
-        </div>
-      </div>
+      <input type="text" id="degreeSearch" class="form-control" placeholder="Search for a degree..." onkeyup="filterDegrees()">
+      <select id="degrees" name="degrees" class="form-control" multiple>
+        {% for category, degrees in grouped_degrees.items %}
+            <optgroup label="{{ category }}">
+                {% for degree in degrees %}
+                    <option value="{{ degree.id }}">
+                        {{ degree.degree_name }} -
+                        <br> Degree Reference Number: {{ degree.degree_number }} 
+                        {% if degree.concentration %} - <br> Concentration: {{ degree.concentration }} {% endif %}
+                    </option>
+                {% endfor %}
+            </optgroup>
+        {% endfor %}
+      </select>
     </div>
-    <!-- Add Triple Minor Checkbox -->
-    <div class="mb-3">
-      <input type="checkbox" id="triple_minor" name="triple_minor">
-      <label for="triple_minor">Triple Minor?</label>
-    </div>
-
-    <div id="third_minor_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="third_minor" class="form-label">Third Minor:</label>
-        <input type="text" class="form-control" id="third_minor" name="third_minor">
-      </div>
-      <div class="mb-3">
-        <label for="third_minor_number" class="form-label">Third Minor Reference Number:</label>
-        <input type="text" class="form-control" id="third_minor_number" name="third_minor_number" maxlength="6" minlength="3">
-      </div>
-      <div id="third_minor_concentration_fields" style="display: none;">
-        <div class="mb-3">
-          <label for="third_minor_concentration" class="form-label">Triple Minor Concentration:</label>
-          <input type="text" class="form-control" id="third_minor_concentration" name="third_minor_concentration">
-        </div>
-      </div>
-    </div>
-    
-    <!--Certificate-->
-    <div class="mb-3">
-      <label for="certificate" class="form-label">Certificate:</label>
-      <input type="text" class="form-control" id="certificate" name="certificate">
-    </div>
-    <div class="mb-3">
-      <label for="certificate_number" class="form-label">Certificate Reference Number:</label>
-      <input type="text" class="form-control" id="certificate_number" name="certificate_number" maxlength="6" minlength="3">
-    </div>
-    <div class="mb-3">
-      <label for="certificate_concentration" class="form-label">Concentration for Certificate:</label>
-      <input type="text" class="form-control" id="certificate_concentration" name="certificate_concentration">
-    </div>
-    <!-- Add Second Certificate Checkbox -->
-    <div class="mb-3">
-      <input type="checkbox" id="double_certificate" name="double_certificate">
-      <label for="double_certificate">Second Certificate?</label>
-    </div>
-    
-    <div id="second_certificate_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="second_certificate" class="form-label">Second Certificate:</label>
-        <input type="text" class="form-control" id="second_certificate" name="second_certificate">
-      </div>
-      <div class="mb-3">
-        <label for="second_certificate_number" class="form-label">Second Certificate Reference Number:</label>
-        <input type="text" class="form-control" id="second_certificate_number" name="second_certificate_number" maxlength="6" minlength="3">
-      </div>
-      <div id="second_certificate_concentration_fields" style="display: none;">
-        <div class="mb-3">
-          <label for="second_certificate_concentration" class="form-label">Second Certificate Concentration:</label>
-          <input type="text" class="form-control" id="second_certificate_concentration" name="second_certificate_concentration">
-        </div>
-      </div>
-    </div>
-    <!-- Add Third certificate Checkbox -->
-    <div class="mb-3">
-      <input type="checkbox" id="triple_certificate" name="triple_certificate">
-      <label for="triple_certificate">Third certificate?</label>
-    </div>
-
-    <div id="third_certificate_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="third_certificate" class="form-label">Third Certificate:</label>
-        <input type="text" class="form-control" id="third_certificate" name="third_certificate">
-      </div>
-      <div class="mb-3">
-        <label for="third_certificate_number" class="form-label">Third Certificate Reference Number:</label>
-        <input type="text" class="form-control" id="third_certificate_number" name="third_certificate_number" maxlength="6" minlength="3">
-      </div>
-    </div>
-    <div id="third_certificate_concentration_fields" style="display: none;">
-      <div class="mb-3">
-        <label for="third_certificate_concentration" class="form-label">Third Certificate Concentration:</label>
-        <input type="text" class="form-control" id="third_certificate_concentration" name="third_certificate_concentration">
-      </div>
-    </div>
-      <button type="submit" class="btn btn-primary">Create Account</button>
+    <button type="submit" class="btn btn-primary">Create Account</button>
   </form>
 
   <p>Already have an account? <a href="{% url 'login' %}">Log In</a></p>
 </div>
 
 <script>
-    // JavaScript to toggle the second major fields when the checkbox is checked
-    document.addEventListener("DOMContentLoaded", function () {
-      var doubleMajorCheckbox = document.getElementById("double_major");
-      var secondMajorFields = document.getElementById("second_major_fields");
-      var secondConcentrationFields = document.getElementById("second_concentration_fields");
-      var tripleMajorCheckbox = document.getElementById("triple_major");
-      var thirdMajorFields = document.getElementById("third_major_fields");
-      var thirdConcentrationFields = document.getElementById("third_concentration_fields");
+  // JavaScript to toggle the second major fields when the checkbox is checked
+  document.addEventListener("DOMContentLoaded", function () {
+    const degreeSelect = document.getElementById("degrees");
 
-      // Check the state of the checkbox on page load
-      if (doubleMajorCheckbox.checked) {
-          secondMajorFields.style.display = "block";
+    degreeSelect.addEventListener("change", function() {
+      const selectedOptions = [...degreeSelect.selectedOptions];
+
+      if (selectedOptions.length > 9) {
+        alert("You can select up to only 6 degrees.");
+        selectedOptions[selectedOptions.length - 1].selected = false;
       }
-
-      // Check the state of the triple major checkbox on page load
-      if (tripleMajorCheckbox.checked) {
-          thirdMajorFields.style.display = "block";
-      }
-
-      // show second major fields when checkbox is clicked
-      doubleMajorCheckbox.addEventListener("change", function () {
-          if (this.checked) {
-              secondMajorFields.style.display = "block";
-              secondConcentrationFields.style.display = "block";
-          } else {
-              secondMajorFields.style.display = "none";
-              secondConcentrationFields.style.display = "none";
-          }
-      });
-      //Show third major fields
-      tripleMajorCheckbox.addEventListener("change", function () {
-          if (this.checked) {
-              thirdMajorFields.style.display = "block";
-              thirdConcentrationFields.style.display = "block";
-          } else {
-              thirdMajorFields.style.display = "none";
-              thirdConcentrationFields.style.display = "none";
-          }
-      });
-
-      //Handle Minor
-      var doubleMinorCheckbox = document.getElementById("double_minor");
-      var secondMinorFields = document.getElementById("second_minor_fields");
-      var secondMinorConcentrationFields = document.getElementById("second_minor_concentration_fields");
-      var tripleMinorCheckbox = document.getElementById("triple_minor");
-      var thirdMinorFields = document.getElementById("third_minor_fields");
-      var thirdMinorConcentrationFields = document.getElementById("third_minor_concentration_fields");
-
-      // Check the state of the checkbox on page load
-      if (doubleMinorCheckbox.checked) {
-          secondMinorFields.style.display = "block";
-      }
-
-      // Check the state of the triple minor checkbox on page load
-      if (tripleMinorCheckbox.checked) {
-          thirdMinorFields.style.display = "block";
-      }
-
-      // show second minor fields when checkbox is clicked
-      doubleMinorCheckbox.addEventListener("change", function () {
-          if (this.checked) {
-              secondMinorFields.style.display = "block";
-              secondMinorConcentrationFields.style.display = "block";
-          } else {
-              secondMinorFields.style.display = "none";
-              secondMinorConcentrationFields.style.display = "none";
-          }
-      });
-      //Show third minor fields
-      tripleMinorCheckbox.addEventListener("change", function () {
-          if (this.checked) {
-              thirdMinorFields.style.display = "block";
-              thirdMinorConcentrationFields.style.display = "block";
-          } else {
-              thirdMinorFields.style.display = "none";
-              thirdMinorConcentrationFields.style.display = "none";
-          }
-      });
-      //handle certificate
-      var doubleCertificateCheckbox = document.getElementById("double_certificate");
-      var secondCertificateFields = document.getElementById("second_certificate_fields");
-      var secondCertificateConcentrationFields = document.getElementById("second_certificate_concentration_fields");
-      var tripleCertificateCheckbox = document.getElementById("triple_certificate");
-      var thirdCertificateFields = document.getElementById("third_certificate_fields");
-      var thirdCertificateConcentrationFields = document.getElementById("third_certificate_concentration_fields");
-
-      // Check the state of the checkbox on page load
-      if (doubleCertificateCheckbox.checked) {
-          secondCertificateFields.style.display = "block";
-      }
-
-      // Check the state of the triple certificate checkbox on page load
-      if (tripleCertificateCheckbox.checked) {
-          thirdCertificateFields.style.display = "block";
-      }
-
-      // show second certificate fields when checkbox is clicked
-      doubleCertificateCheckbox.addEventListener("change", function () {
-          if (this.checked) {
-              secondCertificateFields.style.display = "block"
-              secondCertificateConcentrationFields.style.display = "block";
-          } else {
-              secondCertificateFields.style.display = "none";
-              secondCertificateConcentrationFields.style.display = "none";
-          }
-      });
-      //Show third certificare fields
-      tripleCertificateCheckbox.addEventListener("change", function () {
-          if (this.checked) {
-              thirdCertificateFields.style.display = "block";
-              thirdCertificateConcentrationFields.style.display = "block";
-          } else {
-              thirdCertificateFields.style.display = "none";
-              thirdCertificateConcentrationFields.style.display = "none";
-          }
-      });
+    });
   });
+  function filterDegrees() {
+    let input = document.getElementById("degreeSearch").value.toLowerCase();
+    let select = document.getElementById("degrees");
+    let options = select.getElementsByTagName("option");
+
+    for (let i = 0; i < options.length; i++) {
+        let text = options[i].innerText.toLowerCase();
+        if (text.includes(input)) {
+            options[i].style.display = "";
+        } else {
+            options[i].style.display = "none";
+        }
+    }
+}
 </script>
 {% endblock %}

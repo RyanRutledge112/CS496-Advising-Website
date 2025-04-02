@@ -292,3 +292,21 @@ footer.image-credit a:hover {
     color: red;
     font-weight: bold;
 }
+
+/*Dropdown menu Styling*/
+#degrees {
+    width: 100%; 
+    max-width: 500px;
+    overflow-x: auto; 
+    display: block;
+    min-height: 150px;  
+    max-height: 400px; 
+    overflow-y: auto;
+    resize: vertical;
+}
+
+#degrees option {
+    display: block;
+    width: 100%;   
+    box-sizing: border-box; 
+}
