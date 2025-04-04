@@ -397,6 +397,8 @@ def room(request, chat_id):
         }
         for user_chat in user_chats
     ]
+
+    chats.sort(key=lambda x: x["chat_id"] != int(chat_id))
     
     return render(request, "chat/room.html", {
         'chat_id': chat_id,

@@ -145,7 +145,9 @@
         } else if (data['command']  === 'new_chat'){
           var newChat = data['chat'];
           addChatToSidebar(newChat);
-          setActiveChatById(newChat['chat_id'])
+          if(newChat['chat_created_by_self']){
+            setActiveChatById(newChat['id']);
+          }
         } else if (data['command'] === 'filter_chats'){
           updateShownChats(data);
         }
@@ -360,6 +362,11 @@
 
     function addChatToSidebar(newChat) {
         var chatList = document.querySelector('#chats ul');
+
+        var existingChat = chatList.querySelector(`[data-chat-id="${newChat['chat_id']}"]`);
+        if (existingChat) {
+            return;
+        }
         
         var newChatElement = document.createElement('li');
         newChatElement.classList.add('chat');
@@ -376,7 +383,10 @@
             </div>
         `;
 
-        chatList.insertBefore(newChatElement, chatList.firstChild);
+        chatList.appendChild(newChatElement);
+        if(newChat['chat_created_by_self']){
+          newChatElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
     function setActiveChatById(chat_id) {

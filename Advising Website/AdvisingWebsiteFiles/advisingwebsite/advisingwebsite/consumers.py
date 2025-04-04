@@ -54,12 +54,34 @@ class ChatConsumer(WebsocketConsumer):
                 chat = new_chat
             )
         
+        participants = ChatMember.objects.filter(chat=new_chat).select_related('user')
+
+        #sends chats out to participants in chat so their chats are dynamically updated as necessary
+        for member in participants:
+            async_to_sync(self.channel_layer.group_send)(
+                f'user_{member.user.id}',
+                {
+                    'type': 'chat_message',
+                    'message': {
+                        'command': 'new_chat',
+                        'chat': {
+                            'chat_id': new_chat.id,
+                            'chat_name': new_chat.chat_name.replace(member.user.get_full_name(), "").strip(', ').replace(" ,", ""),
+                            'last_message': 'No messages yet.',
+                            'chat_created_by_self': False
+                        }
+                    }
+                }
+            )
+        
+        #return chat back to sender
         return self.send_message({
             'command': 'new_chat',
             'chat': {
                 'chat_id': new_chat.id,
-                'chat_name': new_chat.chat_name,
-                'last_message': ''
+                'chat_name': new_chat.chat_name.replace(chat_maker.get_full_name(), "").strip(', ').replace(" ,", ""),
+                'last_message': 'No messages yet.',
+                'chat_created_by_self': True
             }
         })
 
@@ -114,8 +136,14 @@ class ChatConsumer(WebsocketConsumer):
                 self.close()
                 return
 
+        #Main chat group for communication between chat members
         async_to_sync(self.channel_layer.group_add)(
             self.room_id,
+            self.channel_name
+        )
+        #Personal group to allow users to receive chats as they're being created
+        async_to_sync(self.channel_layer.group_add)(
+            f'user_{self.user.id}',
             self.channel_name
         )
         self.accept()
@@ -128,6 +156,10 @@ class ChatConsumer(WebsocketConsumer):
         async_to_sync(self.channel_layer.group_discard)(
             self.room_id,
             self.channel_name
+        )
+        async_to_sync(self.channel_layer.group_discard)(
+        f"user_{self.user.id}",
+        self.channel_name
         )
 
     def receive(self, text_data):
