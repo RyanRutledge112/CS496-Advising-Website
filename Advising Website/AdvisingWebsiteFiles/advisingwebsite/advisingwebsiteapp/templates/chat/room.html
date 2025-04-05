@@ -113,9 +113,13 @@
 <script src="{% static 'main.js' %}"></script>
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
-    var email = {{ email }};
-    var chat_id = {{ chat_id }};
-    var full_name = {{ full_name }};
+    var email = '{{ email|escapejs }}';
+    var chat_id = '{{ chat_id|escapejs }}';
+    var full_name = '{{ full_name|escapejs }}';
+
+    email = email.replace(/^"(.*)"$/, '$1');
+    chat_id = chat_id.replace(/^"(.*)"$/, '$1');
+    full_name = full_name.replace(/^"(.*)"$/, '$1');
 
     $(document).ready(function() {
       $('#chatParticipants').select2({
@@ -165,6 +169,18 @@
     document.querySelector('#chat-message-submit').onclick = function(e) {
         var messageInputDom = document.getElementById('chat-message-input');
         var message = messageInputDom.value;
+
+        if(message === null || message === ""){
+          alert('ERROR: There was a problem when trying to get your message. Please make sure you have at least one character in the text box before sending a message');
+          return;
+        }
+
+        if(chatSocket.readyState === WebSocket.CLOSED){
+          console.log('WebSocket is not currently ready to send data and is closed.');
+          alert('WebSocket is closed right now. Try again later.');
+          return;
+        }
+
         chatSocket.send(JSON.stringify({
             'command': 'new_message',
             'message': message,
@@ -176,10 +192,16 @@
     };
 
     function fetchMessages() {
-        chatSocket.send(JSON.stringify({
-          'command': 'fetch_messages',
-          'chat_id': chat_id
-        }));
+      if(chatSocket.readyState === WebSocket.CLOSED){
+        console.log('WebSocket is not currently ready to send data and is closed.');
+        alert('WebSocket is closed right now. Try again later.');
+        return;
+      }
+
+      chatSocket.send(JSON.stringify({
+        'command': 'fetch_messages',
+        'chat_id': chat_id
+      }));
     };
 
     function formatTimeAgo(date) {
@@ -260,6 +282,7 @@
           newChatElement.setAttribute('data-chat-id', chat['id']);
           newChatElement.setAttribute('onclick', 'setActiveChat(this)');
 
+          //Removing user's full name from the chat name, then fixing any leftover spaces and commas before being displayed
           chat['chat_name'] = chat['chat_name']
           .replace(full_name, "")
           .replace(/^,|,$/g, "")
@@ -313,6 +336,13 @@
     document.querySelector('#search-input').onkeyup = function(e) {
       var messageInputDom = document.getElementById('search-input');
       var message = messageInputDom.value;
+
+      if(chatSocket.readyState === WebSocket.CLOSED){
+        console.log('WebSocket is not currently ready to send data and is closed.');
+        alert('WebSocket is closed right now. Try again later.');
+        return;
+      }
+
       chatSocket.send(JSON.stringify({
           'command': 'search_chats',
           'email': email,
@@ -389,6 +419,13 @@
     document.getElementById('newChatForm').addEventListener('submit', function (event) {
       event.preventDefault();
       chatMembers = getSelectedMembers();
+
+      if(chatSocket.readyState === WebSocket.CLOSED){
+        console.log('WebSocket is not currently ready to send data and is closed.');
+        alert('WebSocket is closed right now. Try again later.');
+        return;
+      }
+
       chatSocket.send(JSON.stringify({
         'command': 'new_chat',
         'chatMemberIDs': chatMembers['ids'],

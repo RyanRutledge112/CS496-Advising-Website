@@ -353,7 +353,10 @@ def change_password(request):
 def chathome(request):
     user = request.user
     user_chats = ChatMember.objects.filter(user=user).select_related("chat")
-    other_users = User.objects.exclude(id=user.id)
+    other_users = User.objects.filter(is_advisor=True).exclude(id=user.id)
+
+    if user.is_advisor:
+        other_users = User.objects.exclude(id=user.id)
 
     chats = [
         {
@@ -383,8 +386,12 @@ def room(request, chat_id):
         return HttpResponseRedirect(f"{reverse('error_page')}?exception={str('ERROR 404: Chat does not exist or could not be found.')}")
     if not ChatMember.objects.filter(user=user, chat=chat).first():
         return HttpResponseRedirect(f"{reverse('error_page')}?exception={str('ERROR 500: User is not a member of this chat.')}")
+    
     user_chats = ChatMember.objects.filter(user=user).select_related("chat")
-    other_users = User.objects.exclude(id=user.id)
+    other_users = User.objects.filter(is_advisor=True).exclude(id=user.id)
+
+    if user.is_advisor:
+        other_users = User.objects.exclude(id=user.id)
 
     chats = [
         {

@@ -121,8 +121,11 @@
 <script src="{% static 'main.js' %}"></script>
 <script src="{% static 'reconnecting-websocket.js' %}"></script>
 <script>
-    var email = {{ email }};
-    var full_name = {{ full_name }};
+    var email = '{{ email|escapejs }}';
+    var full_name = '{{ full_name|escapejs }}';
+
+    email = email.replace(/^"(.*)"$/, '$1');
+    full_name = full_name.replace(/^"(.*)"$/, '$1');
 
     $(document).ready(function() {
       $('#chatParticipants').select2({
@@ -151,6 +154,13 @@
     document.querySelector('#search-input').onkeyup = function(e) {
       var messageInputDom = document.getElementById('search-input');
       var message = messageInputDom.value;
+
+      if(chatSocket.readyState === WebSocket.CLOSED){
+        console.log('WebSocket is not currently ready to send data and is closed.');
+        alert('WebSocket is closed right now. Try again later.');
+        return;
+      }
+
       chatSocket.send(JSON.stringify({
           'command': 'search_chats',
           'email': email,
@@ -181,6 +191,7 @@
           newChatElement.setAttribute('data-chat-id', chat['id']);
           newChatElement.setAttribute('onclick', 'setActiveChat(this)');
 
+          //Removing user's full name from the chat name, then fixing any leftover spaces and commas before being displayed
           chat['chat_name'] = chat['chat_name']
           .replace(full_name, "")
           .replace(/^,|,$/g, "")
@@ -271,6 +282,13 @@
     document.getElementById('newChatForm').addEventListener('submit', function (event) {
       event.preventDefault();
       chatMembers = getSelectedMembers();
+
+      if(chatSocket.readyState === WebSocket.CLOSED){
+        console.log('WebSocket is not currently ready to send data and is closed.');
+        alert('WebSocket is closed right now. Try again later.');
+        return;
+      }
+
       chatSocket.send(JSON.stringify({
         'command': 'new_chat',
         'chatMemberIDs': chatMembers['ids'],
