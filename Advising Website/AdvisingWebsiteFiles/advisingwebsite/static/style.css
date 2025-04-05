@@ -44,6 +44,7 @@ body {
   }
 }
 #frame #sidepanel #profile {
+  font-size: 1.6em;
   width: 80%;
   margin: 25px auto;
 }
@@ -52,7 +53,7 @@ body {
     width: 100%;
     margin: 0 auto;
     padding: 5px 0 0 0;
-    background: #32465a;
+    background: #B01E24;
   }
 }
 #frame #sidepanel #profile.expanded .wrap {
@@ -300,6 +301,7 @@ body {
 }
 #frame #sidepanel #search input {
   font-family: "proxima-nova",  "Source Sans Pro", sans-serif;
+  font-size: 1.3em;
   padding: 10px 0 10px 46px;
   width: calc(100% - 25px);
   border: none;
@@ -350,7 +352,7 @@ body {
 #frame #sidepanel #chats ul li.chat {
   position: relative;
   padding: 10px 0 15px 0;
-  font-size: 0.9em;
+  font-size: 1.3em;
   cursor: pointer;
 }
 @media screen and (max-width: 735px) {
@@ -453,7 +455,7 @@ body {
   background: #B01E24;
   color: #f5f5f5;
   cursor: pointer;
-  font-size: 0.85em;
+  font-size: 1em;
   font-family: "proxima-nova",  "Source Sans Pro", sans-serif;
 }
 @media screen and (max-width: 735px) {
@@ -467,13 +469,16 @@ body {
   outline: none;
 }
 #frame #sidepanel #bottom-bar button:nth-child(1) {
-  border-right: 1px solid #ffffff;
+  border-right: 1px solid #CCCCCC;
 }
 @media screen and (max-width: 735px) {
   #frame #sidepanel #bottom-bar button:nth-child(1) {
     border-right: none;
     border-bottom: 1px solid #2c3e50;
   }
+}
+#frame #sidepanel #bottom-bar button {
+  border-top: 1px solid #CCCCCC;
 }
 #frame #sidepanel #bottom-bar button:hover {
   background: #9A1A20;
@@ -525,6 +530,7 @@ body {
 #frame .content .chat-profile p {
   float: left;
   font-size: 18px;
+  font-weight: 550;
 }
 #frame .content .chat-profile .social-media {
   float: right;
@@ -565,7 +571,7 @@ body {
   float: left;
   margin: 15px 15px 5px 15px;
   width: calc(100% - 25px);
-  font-size: 0.9em;
+  font-size: 1em;
 }
 #frame .content .messages ul li:nth-last-child(1) {
   margin-bottom: 20px;
@@ -603,6 +609,9 @@ body {
 #frame .content .messages ul li.replies span {
   float: right;
 }
+#frame .content .messages ul li small{
+  font-size: smaller;
+}
 #frame .content .messages ul li img {
   width: 42px;
   border-radius: 50%;
@@ -619,7 +628,7 @@ body {
 
 @media screen and (min-width: 735px) {
   #frame .content .messages ul li p {
-    max-width: 300px;
+    max-width: 40%;
   }
 }
 #frame .content .message-input {
@@ -635,7 +644,7 @@ body {
   font-family: "proxima-nova",  "Source Sans Pro", sans-serif;
   float: left;
   border: none;
-  width: calc(100% - 90px);
+  width: calc(100% - 60px);
   padding: 11px 32px 10px 8px;
   font-size: 1.8em;
   color: #32465a;
@@ -670,8 +679,8 @@ body {
 #frame .content .message-input .wrap button {
   float: right;
   border: none;
-  width: 50px;
-  padding: 12px 0;
+  width: 60px;
+  padding: 15px 0;
   cursor: pointer;
   background: #B01E24;
   color: #f5f5f5;

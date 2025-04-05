@@ -24,7 +24,7 @@
       <div id="profile">
         <div class="wrap">
           <img id="profile-img" src="{{ profile_picture }}" class="offline" alt="" />
-          <p>{{ full_name|slice:"1:-1" }}</p>
+          <p><b>{{ full_name|slice:"1:-1" }}</b></p>
           {% comment %}
           <i class="fa fa-chevron-down expand-button" aria-hidden="true"></i>
           <div id="status-options">
@@ -48,7 +48,7 @@
       </div>
       <div id="search">
         <label for=""><i class="fa fa-search" aria-hidden="true"></i></label>
-        <input id="search-input" type="text" placeholder="Type the chat name and press enter to search..." />
+        <input id="search-input" type="text" placeholder="Type the chat name here to search..." />
       </div>
       <div id="chats">
         <ul>
@@ -97,13 +97,21 @@
       </div>
       <div class="messages">
         <ul id="chat-log">
-            <li class="sent">
+          <li class="sent">
             <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
             <p><strong>WKU Advising</strong><br>Welcome to the WKU Advising Messaging System!</p>
           </li>
           <li class="replies">
             <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
-            <p><strong>WKU Advising</strong><br>Click on one of the contacts on the left scroll bar or add a new contact to start!</p>
+            <p><strong>WKU Advising</strong><br>Click on one of the chats on the left scroll bar or add a new chat by clicking the "Add Chat" button in the bottom left corner to start chatting!</p>
+          </li>
+          <li class="sent">
+            <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
+            <p><strong>WKU Advising</strong><br>After navigating to a chat, you can click on the active chat again to come back here to the home chat page!</p>
+          </li>
+          <li class="replies">
+            <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
+            <p><strong>WKU Advising</strong><br>If you want to get back to the main page of the website, please click on the "Home" button in the bottom left corner!</p>
           </li>
         </ul>
       </div>
@@ -173,7 +181,13 @@
           newChatElement.setAttribute('data-chat-id', chat['id']);
           newChatElement.setAttribute('onclick', 'setActiveChat(this)');
 
-          chat['chat_name'] = chat['chat_name'].replace(full_name, "").replace(/^,|,$/g, "").replace(/\s*,\s*/g, ", ").trim();
+          chat['chat_name'] = chat['chat_name']
+          .replace(full_name, "")
+          .replace(/^,|,$/g, "")
+          .replace(/\s*,\s*/g, ", ")
+          .replace(/,\s*,+/g, ',')
+          .replace(/^(\s*,\s*)+|(\s*,\s*)+$/g, '')
+          .trim();
 
           newChatElement.innerHTML = `
               <div class="wrap">

@@ -24,7 +24,7 @@
       <div id="profile">
         <div class="wrap">
           <img id="profile-img" src="{{ profile_picture }}" class="offline" alt="" />
-          <p>{{ full_name|slice:"1:-1" }}</p>
+          <p><b>{{ full_name|slice:"1:-1" }}</b></p>
           {% comment %}
           <i class="fa fa-chevron-down expand-button" aria-hidden="true"></i>
           <div id="status-options">
@@ -48,7 +48,7 @@
       </div>
       <div id="search">
         <label for=""><i class="fa fa-search" aria-hidden="true"></i></label>
-        <input type="text" id="search-input" placeholder="Type the chat name and press enter to search..." />
+        <input type="text" id="search-input" placeholder="Type the chat name here to search..." />
       </div>
       <div id="chats">
         <ul>
@@ -102,7 +102,6 @@
       <div class="message-input">
         <div class="wrap">
         <input id="chat-message-input" type="text" placeholder="Write your message..." />
-        <i class="fa fa-paperclip attachment" aria-hidden="true"></i>
         <button id="chat-message-submit" class="submit">
           <i class="fa fa-paper-plane" aria-hidden="true"></i>
         </button>
@@ -183,14 +182,47 @@
         }));
     };
 
-    var lastTimestamp = new Date();
+    function formatTimeAgo(date) {
+      const now = new Date();
+      const diff = Math.floor((now - date) / 1000);
+
+      const units = [
+        { name: "year", seconds: 31536000 },
+        { name: "month", seconds: 2592000 },
+        { name: "day", seconds: 86400 },
+        { name: "hour", seconds: 3600 },
+        { name: "minute", seconds: 60 },
+      ];
+
+      for (let unit of units) {
+        const interval = Math.floor(diff / unit.seconds);
+        if (interval >= 1) {
+          return `${interval} ${unit.name}${interval !== 1 ? "s" : ""} ago`;
+        }
+      }
+
+      return "Just now";
+    }
+
+    function formatFullDate(date) {
+      return date.toLocaleString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      }).replace(',', '')
+        .replace(' at', '');
+    }
+
     function createMessage(data) {
       var author = data['author'];
+      var timestamp = new Date(data['date_sent']);
 
-      var timestamp = new Date(data['date_sent'])
-
-      var timeDiff = lastTimestamp ? Math.floor((lastTimestamp - timestamp) / 60000) : 0;
-      var timeText = timeDiff > 0 ? `${timeDiff} min ago` : "Just now";
+      var timeText = formatTimeAgo(timestamp);
+      var fullDate = formatFullDate(timestamp);
 
       var msgListTag = document.createElement('li');
       var imgTag = document.createElement('img');
@@ -200,14 +232,14 @@
       if (author === email) {
         msgListTag.className = 'sent';
         imgTag.src = '{{ profile_picture }}';
-        messageText.innerHTML += "<strong>" + full_name + "</strong> <br>"
+        messageText.innerHTML += "<strong>" + full_name + "</strong> <br>";
       } else {
         msgListTag.className = 'replies';
         imgTag.src = getProfilePicture(data['first_initial']);
-        messageText.innerHTML += "<strong>" + data['author_name'] + "</strong> <br>"
+        messageText.innerHTML += "<strong>" + data['author_name'] + "</strong> <br>";
       }
 
-      messageText.innerHTML += data.content + '<br> <small>' + timeText + "</small>";
+      messageText.innerHTML += data.content + '<br> <small>' + timeText + "<br>" + fullDate + "</small>";
 
       messageContainer.appendChild(messageText);
       msgListTag.appendChild(imgTag);
@@ -228,7 +260,13 @@
           newChatElement.setAttribute('data-chat-id', chat['id']);
           newChatElement.setAttribute('onclick', 'setActiveChat(this)');
 
-          chat['chat_name'] = chat['chat_name'].replace(full_name, "").replace(/^,|,$/g, "").replace(/\s*,\s*/g, ", ").trim();
+          chat['chat_name'] = chat['chat_name']
+          .replace(full_name, "")
+          .replace(/^,|,$/g, "")
+          .replace(/\s*,\s*/g, ", ")
+          .replace(/,\s*,+/g, ',')
+          .replace(/^(\s*,\s*)+|(\s*,\s*)+$/g, '')
+          .trim();
 
           newChatElement.innerHTML = `
               <div class="wrap">
