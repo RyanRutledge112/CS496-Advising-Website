@@ -534,15 +534,18 @@ body {
 }
 #frame .content .chat-profile .social-media {
   float: right;
+  height: 80px;
+  border: none;
+  background: #f5f5f5;
+}
+#frame .content .chat-profile .social-media p {
+  margin-top: -2.52px;
 }
 #frame .content .chat-profile .social-media i {
-  margin-left: 14px;
+  margin-left: 8px;
   cursor: pointer;
 }
-#frame .content .chat-profile .social-media i:nth-last-child(1) {
-  margin-right: 20px;
-}
-#frame .content .chat-profile .social-media i:hover {
+#frame .content .chat-profile .social-media:hover {
   color: #435f7a;
 }
 #frame .content .messages {
@@ -701,7 +704,7 @@ body {
   font-size: 1.5em !important;
 }
 
-.modal {
+.modal-add-chat {
   display: none;
   position: fixed;
   z-index: 1000;
@@ -723,7 +726,7 @@ html.modal-open, body.modal-open {
   width: 100%;
 }
 
-.modal-content {
+.modal-content-add-chat {
   font-family: "proxima-nova", "Source Sans Pro", sans-serif;
   background-color: white;
   color: black;
@@ -740,7 +743,7 @@ html.modal-open, body.modal-open {
   justify-content: center;
 }
 
-.modal-content label {
+.modal-content-add-chat label {
   font-size: 16px;
 }
 
@@ -752,7 +755,7 @@ html.modal-open, body.modal-open {
   min-width: 400px;
 }
 
-.modal-content button {
+.modal-content-add-chat button {
   margin-top: 10px;
   padding: 10px 20px;
   cursor: pointer;
@@ -762,7 +765,7 @@ html.modal-open, body.modal-open {
   font-size: 18px !important;
 }
 
-.close {
+.close-add-chat {
   position: absolute;
   top: 10px;
   right: 15px;
@@ -786,6 +789,8 @@ html.modal-open, body.modal-open {
   font-size: 16px;
   color: black !important;
   background-color: white !important;
+  overflow-y: auto !important;
+  max-height: 175px !important;
 }
 
 .select2-results__option {
@@ -800,10 +805,69 @@ html.modal-open, body.modal-open {
   color: white !important;
 }
 
+.select2-dropdown {
+  z-index: 9999 !important;
+}
+
 .select2-search input {
   font-family: "proxima-nova", "Source Sans Pro", sans-serif;
   font-size: 16px;
   color: black !important;
   background-color: white !important;
   border: 1px solid #ccc;
+}
+
+.modal-delete-chat {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 600px;
+  max-width: 900px;
+  height: auto;
+  max-height: 80vh;
+  overflow: hidden;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.modal-content-delete-chat {
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
+  background-color: white;
+  color: black;
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 600px;
+  max-width: 900px;
+  text-align: center;
+  position: relative;
+  overflow: auto;
+  flex-direction: column;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-content-delete-chat label {
+  font-size: 16px;
+}
+
+.modal-content-delete-chat button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  font-family: "proxima-nova", "Source Sans Pro", sans-serif;
+  font-size: 18px !important;
+}
+
+.close-delete-chat {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 20px;
+  cursor: pointer;
 }

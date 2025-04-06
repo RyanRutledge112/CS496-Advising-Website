@@ -69,9 +69,9 @@
     </div>
       <div id="bottom-bar">
         <button id="addchat"><i class="fa fa-user-plus fa-fw" aria-hidden="true"></i> <span>Add chat</span></button>
-        <div id="chatPopup" class="modal" style="display: none;">
-          <div class="modal-content">
-            <span class="close">&times;</span>
+        <div id="chatPopup" class="modal-add-chat">
+          <div class="modal-content-add-chat">
+            <span class="close-add-chat">&times;</span>
             <h2>Create New Chat</h2>
             <form id="newChatForm">
               {% csrf_token %}
@@ -94,6 +94,28 @@
       <div class="chat-profile">
         <img id="chat-image-display" alt="" />
         <p id="chat-name-display"></p>
+        <button id = 'delete-chat' class="social-media">
+          <p>Delete Chat:</p>
+          <i class="fa fa-trash" aria-hidden="true"></i>
+        </button>
+        <div id="delete-chat-popup" class="modal" style="display: none;">
+          <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Delete Chats</h2>
+            <form id="deleteChatForm">
+              {% csrf_token %}
+              <label for="chats">Select Chats to delete:</label>
+              <div class="select2-wrapper">
+                <select id="chatsToDelete" name="chatsToDelete" multiple required>
+                  {% for chat in chats %}
+                    <option value="{{ chat.id }}">{{ chat.chat_name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit">Delete Chats</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
       <div class="messages">
         <ul id="chat-log">
@@ -121,11 +143,24 @@
     chat_id = chat_id.replace(/^"(.*)"$/, '$1');
     full_name = full_name.replace(/^"(.*)"$/, '$1');
 
+    
     $(document).ready(function() {
-      $('#chatParticipants').select2({
-        dropdownParent: $('#chatPopup'),
-        placeholder: "Select users",
-        allowClear: true
+      $('#delete-chat').on('click', function () {
+        $('#delete-chat-popup').show();
+        $('#chatsToDelete').select2({
+          dropdownParent: $('#delete-chat-popup'),
+          placeholder: "Select chats to delete",
+          allowClear: true
+        });
+      });
+
+      $('#addchat').on('click', function () {
+        $('#chatPopup').show();
+        $('#chatParticipants').select2({
+          dropdownParent: $('#chatPopup'),
+          placeholder: "Select users",
+          allowClear: true
+        });
       });
     });
 
@@ -373,7 +408,7 @@
     document.addEventListener("DOMContentLoaded", function () {
       var addChatBtn = document.getElementById("addchat");
       var chatPopup = document.getElementById("chatPopup");
-      var closeBtn = document.querySelector(".close");
+      var closeBtn = document.querySelector(".close-add-chat");
 
       addChatBtn.addEventListener("click", function () {
         chatPopup.style.display = "block";
@@ -390,18 +425,6 @@
       });
     });
 
-    function getSelectedMembers() {
-      var selectedMembers = $('#chatParticipants').val();
-      var selectedNames = $('#chatParticipants option:selected').map(function() {
-        return $(this).text();
-      }).get();
-
-      console.log("Selected IDs:", selectedMembers);
-      console.log("Selected Names:", selectedNames);
-
-      return { 'ids': selectedMembers, 'names': selectedNames };
-    }
-
     function openModal() {
       document.getElementById('chatPopup').style.display = 'block';
       document.documentElement.classList.add('modal-open');
@@ -414,7 +437,19 @@
       document.body.classList.remove('modal-open');
     }
 
-    document.querySelector('.close').addEventListener('click', closeModal);
+    document.querySelector('.close-add-chat').addEventListener('click', closeModal);
+
+    function getSelectedMembers() {
+      var selectedMembers = $('#chatParticipants').val();
+      var selectedNames = $('#chatParticipants option:selected').map(function() {
+        return $(this).text();
+      }).get();
+
+      console.log("Selected IDs:", selectedMembers);
+      console.log("Selected Names:", selectedNames);
+
+      return { 'ids': selectedMembers, 'names': selectedNames };
+    }
 
     document.getElementById('newChatForm').addEventListener('submit', function (event) {
       event.preventDefault();

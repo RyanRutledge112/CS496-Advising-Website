@@ -8,8 +8,6 @@
     <link rel='stylesheet prefetch' href='https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css'>
     <link rel='stylesheet prefetch' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.2/css/font-awesome.min.css'>
     <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
@@ -69,9 +67,9 @@
     </div>
       <div id="bottom-bar">
         <button id="addchat"><i class="fa fa-user-plus fa-fw" aria-hidden="true"></i> <span>Add chat</span></button>
-        <div id="chatPopup" class="modal" style="display: none;">
-          <div class="modal-content">
-            <span class="close">&times;</span>
+        <div id="chatPopup" class="modal-add-chat">
+          <div class="modal-content-add-chat">
+            <span class="close-add-chat">&times;</span>
             <h2>Create New Chat</h2>
             <form id="newChatForm">
               {% csrf_token %}
@@ -87,6 +85,24 @@
             </form>
           </div>
         </div>
+        <div id="delete-chat-popup" class="modal-delete-chat">
+          <div class="modal-content-delete-chat">
+            <span class="close-delete-chat">&times;</span>
+            <h2>Delete Chats</h2>
+            <form id="deleteChatForm">
+              {% csrf_token %}
+              <label for="chats">Select Chats to delete:</label>
+              <div class="select2-wrapper">
+                <select id="chatsToDelete" name="chatsToDelete" multiple required>
+                  {% for chat in chats %}
+                    <option value="{{ chat.chat_id }}">{{ chat.name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit">Delete Chats</button>
+              </div>
+            </form>
+          </div>
+        </div>
         <button id="home" onclick="window.location.href='{% url 'home' %}'"><i class="fa fa-home fa-fw" aria-hidden="true"></i> <span>Home</span></button>
       </div>
     </div>
@@ -94,6 +110,7 @@
       <div class="chat-profile">
         <img src="https://www.wku.edu/athletictraditions/images/redtowellogo.gif" alt="" />
         <p>WKU Advising Messages</p>
+        <button id = 'delete-chat' class="social-media"><p>Delete Chats:</p><i class="fa fa-trash" aria-hidden="true"></i></button>
       </div>
       <div class="messages">
         <ul id="chat-log">
@@ -126,12 +143,22 @@
 
     email = email.replace(/^"(.*)"$/, '$1');
     full_name = full_name.replace(/^"(.*)"$/, '$1');
-
+    
     $(document).ready(function() {
-      $('#chatParticipants').select2({
-        dropdownParent: $('#chatPopup'),
-        placeholder: "Select users",
-        allowClear: true
+      $('#delete-chat').on('click', function () {
+        $('#delete-chat-popup').show();
+        $('#chatsToDelete').select2({
+          placeholder: "Select chats to delete",
+          allowClear: true,
+        });
+      });
+
+      $('#addchat').on('click', function () {
+        $('#chatPopup').show();
+        $('#chatParticipants').select2({
+          placeholder: "Select users",
+          allowClear: true,
+        });
       });
     });
 
@@ -236,22 +263,56 @@
     document.addEventListener("DOMContentLoaded", function () {
       var addChatBtn = document.getElementById("addchat");
       var chatPopup = document.getElementById("chatPopup");
-      var closeBtn = document.querySelector(".close");
+      var closeAddChatBtn = document.querySelector(".close-add-chat");
 
       addChatBtn.addEventListener("click", function () {
-        chatPopup.style.display = "block";
+        openModal('chatPopup');
       });
 
-      closeBtn.addEventListener("click", function () {
-        chatPopup.style.display = "none";
+      closeAddChatBtn.addEventListener("click", function () {
+        closeModal('chatPopup');
       });
 
       window.addEventListener("click", function (event) {
         if (event.target === chatPopup) {
-          chatPopup.style.display = "none";
+          closeModal('chatPopup');
         }
       });
     });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var deleteChatBtn = document.getElementById('delete-chat');
+      var deleteChatPopup = document.getElementById('delete-chat-popup');
+      var closeDeleteChatBtn = document.querySelector('.close-delete-chat');
+
+      deleteChatBtn.addEventListener("click", function () {
+        openModal('delete-chat-popup');
+      });
+
+      closeDeleteChatBtn.addEventListener("click", function () {
+        closeModal('delete-chat-popup');
+      });
+
+      window.addEventListener("click", function (event) {
+        if (event.target === chatPopup) {
+          closeModal('delete-chat-popup');
+        }
+      });
+    });
+
+    function openModal(popup) {
+      document.getElementById(popup).style.display = 'block';
+      document.documentElement.classList.add('modal-open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeModal(popup) {
+      document.getElementById(popup).style.display = 'none';
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+    }
+
+    document.querySelector('.close-add-chat').addEventListener('click', closeModal);
 
     function getSelectedMembers() {
       var selectedMembers = $('#chatParticipants').val();
@@ -264,20 +325,6 @@
 
       return { 'ids': selectedMembers, 'names': selectedNames };
     }
-
-    function openModal() {
-      document.getElementById('chatPopup').style.display = 'block';
-      document.documentElement.classList.add('modal-open');
-      document.body.classList.add('modal-open');
-    }
-
-    function closeModal() {
-      document.getElementById('chatPopup').style.display = 'none';
-      document.documentElement.classList.remove('modal-open');
-      document.body.classList.remove('modal-open');
-    }
-
-    document.querySelector('.close').addEventListener('click', closeModal);
 
     document.getElementById('newChatForm').addEventListener('submit', function (event) {
       event.preventDefault();
@@ -365,7 +412,7 @@
           "z": "https://static-00.iconduck.com/assets.00/z-letter-icon-512x512-puk3v0kb.png"
       };
       
-      return pictures[letter.toLowerCase()];
+      return pictures[letter.toLowerCase()] || 'https://www.wku.edu/athletictraditions/images/redtowellogo.gif';
     }
 </script>
 </body>
