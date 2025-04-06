@@ -352,7 +352,7 @@ def change_password(request):
 @login_required
 def chathome(request):
     user = request.user
-    user_chats = ChatMember.objects.filter(user=user).select_related("chat")
+    user_chats = ChatMember.objects.filter(user=user, chat_deleted=False).select_related("chat")
     other_users = User.objects.filter(is_advisor=True).exclude(id=user.id)
 
     if user.is_advisor:
@@ -375,7 +375,8 @@ def chathome(request):
         "email": mark_safe(json.dumps(request.user.email)), 
         "users": other_users,
         "full_name": mark_safe(json.dumps(request.user.get_full_name())),
-        "profile_picture": get_profile_picture(user.get_short_name()[0].lower())
+        "profile_picture": get_profile_picture(user.get_short_name()[0].lower()),
+        'edit_chat_list': json.dumps(list(chats))
     })
 
 @login_required
@@ -387,7 +388,7 @@ def room(request, chat_id):
     if not ChatMember.objects.filter(user=user, chat=chat).first():
         return HttpResponseRedirect(f"{reverse('error_page')}?exception={str('ERROR 500: User is not a member of this chat.')}")
     
-    user_chats = ChatMember.objects.filter(user=user).select_related("chat")
+    user_chats = ChatMember.objects.filter(user=user, chat_deleted=False).select_related("chat")
     other_users = User.objects.filter(is_advisor=True).exclude(id=user.id)
 
     if user.is_advisor:
@@ -413,7 +414,8 @@ def room(request, chat_id):
         "chats": chats,
         "users": other_users,
         "full_name": mark_safe(json.dumps(request.user.get_full_name())),
-        "profile_picture": get_profile_picture(user.get_short_name()[0].lower())
+        "profile_picture": get_profile_picture(user.get_short_name()[0].lower()),
+        'edit_chat_list': json.dumps(list(chats))
     })
 
 @login_required

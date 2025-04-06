@@ -87,6 +87,24 @@
             </form>
           </div>
         </div>
+        <div id="delete-chat-popup" class="modal-delete-chat">
+          <div class="modal-content-delete-chat">
+            <span class="close-delete-chat">&times;</span>
+            <h2>Delete Chats</h2>
+            <form id="deleteChatForm">
+              {% csrf_token %}
+              <label for="chats">Select Chats to delete:</label>
+              <div class="select2-wrapper">
+                <select id="chatsToDelete" name="chatsToDelete" multiple required>
+                  {% for chat in chats %}
+                    <option value="{{ chat.chat_id }}">{{ chat.name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit">Delete Chats</button>
+              </div>
+            </form>
+          </div>
+        </div>
         <button id="home" onclick="window.location.href='{% url 'home' %}'"><i class="fa fa-home fa-fw" aria-hidden="true"></i> <span>Home</span></button>
       </div>
     </div>
@@ -98,24 +116,6 @@
           <p>Delete Chat:</p>
           <i class="fa fa-trash" aria-hidden="true"></i>
         </button>
-        <div id="delete-chat-popup" class="modal" style="display: none;">
-          <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Delete Chats</h2>
-            <form id="deleteChatForm">
-              {% csrf_token %}
-              <label for="chats">Select Chats to delete:</label>
-              <div class="select2-wrapper">
-                <select id="chatsToDelete" name="chatsToDelete" multiple required>
-                  {% for chat in chats %}
-                    <option value="{{ chat.id }}">{{ chat.chat_name }}</option>
-                  {% endfor %}
-                </select>
-                <button type="submit">Delete Chats</button>
-              </div>
-            </form>
-          </div>
-        </div>
       </div>
       <div class="messages">
         <ul id="chat-log">
@@ -138,6 +138,7 @@
     var email = '{{ email|escapejs }}';
     var chat_id = '{{ chat_id|escapejs }}';
     var full_name = '{{ full_name|escapejs }}';
+    var chats = JSON.parse('{{ edit_chat_list|escapejs }}');
 
     email = email.replace(/^"(.*)"$/, '$1');
     chat_id = chat_id.replace(/^"(.*)"$/, '$1');
@@ -148,18 +149,16 @@
       $('#delete-chat').on('click', function () {
         $('#delete-chat-popup').show();
         $('#chatsToDelete').select2({
-          dropdownParent: $('#delete-chat-popup'),
           placeholder: "Select chats to delete",
-          allowClear: true
+          allowClear: true,
         });
       });
 
       $('#addchat').on('click', function () {
         $('#chatPopup').show();
         $('#chatParticipants').select2({
-          dropdownParent: $('#chatPopup'),
           placeholder: "Select users",
-          allowClear: true
+          allowClear: true,
         });
       });
     });
@@ -408,31 +407,51 @@
     document.addEventListener("DOMContentLoaded", function () {
       var addChatBtn = document.getElementById("addchat");
       var chatPopup = document.getElementById("chatPopup");
-      var closeBtn = document.querySelector(".close-add-chat");
+      var closeAddChatBtn = document.querySelector(".close-add-chat");
 
       addChatBtn.addEventListener("click", function () {
-        chatPopup.style.display = "block";
+        openModal('chatPopup');
       });
 
-      closeBtn.addEventListener("click", function () {
-        chatPopup.style.display = "none";
+      closeAddChatBtn.addEventListener("click", function () {
+        closeModal('chatPopup');
       });
 
       window.addEventListener("click", function (event) {
         if (event.target === chatPopup) {
-          chatPopup.style.display = "none";
+          closeModal('chatPopup');
         }
       });
     });
 
-    function openModal() {
-      document.getElementById('chatPopup').style.display = 'block';
+    document.addEventListener("DOMContentLoaded", function() {
+      var deleteChatBtn = document.getElementById('delete-chat');
+      var deleteChatPopup = document.getElementById('delete-chat-popup');
+      var closeDeleteChatBtn = document.querySelector('.close-delete-chat');
+
+      deleteChatBtn.addEventListener("click", function () {
+        openModal('delete-chat-popup');
+      });
+
+      closeDeleteChatBtn.addEventListener("click", function () {
+        closeModal('delete-chat-popup');
+      });
+
+      window.addEventListener("click", function (event) {
+        if (event.target === chatPopup) {
+          closeModal('delete-chat-popup');
+        }
+      });
+    });
+
+    function openModal(popup) {
+      document.getElementById(popup).style.display = 'block';
       document.documentElement.classList.add('modal-open');
       document.body.classList.add('modal-open');
     }
 
-    function closeModal() {
-      document.getElementById('chatPopup').style.display = 'none';
+    function closeModal(popup) {
+      document.getElementById(popup).style.display = 'none';
       document.documentElement.classList.remove('modal-open');
       document.body.classList.remove('modal-open');
     }
@@ -444,9 +463,6 @@
       var selectedNames = $('#chatParticipants option:selected').map(function() {
         return $(this).text();
       }).get();
-
-      console.log("Selected IDs:", selectedMembers);
-      console.log("Selected Names:", selectedNames);
 
       return { 'ids': selectedMembers, 'names': selectedNames };
     }
@@ -467,8 +483,49 @@
         'chatMemberNames': chatMembers['names'],
         'createdBy': email
       }));
-      closeModal();
+      closeModal('chatPopup');
     });
+
+    function getChatsToDelete(){
+      var selectedChats = $('#chatsToDelete').val();
+      var selectedChatNames = $('#chatsToDelete option:selected').map(function() {
+        return $(this).text();
+      }).get();
+
+      console.log("Selected Chat IDs: ", selectedChats);
+      console.log("Selected Chat Names:", selectedChatNames);
+
+      return selectedChats;
+    }
+
+    document.getElementById('deleteChatForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+      chatsToDelete = getChatsToDelete();
+
+      if(chatSocket.readyState === WebSocket.CLOSED){
+        console.log('WebSocket is not currently ready to send data and is closed.');
+        alert('WebSocket is closed right now. Try again later.');
+        return;
+      }
+
+      chatSocket.send(JSON.stringify({
+        'command': 'delete_chats',
+        'chatIDs': chatsToDelete,
+        'deletedBy': email
+      }));
+      closeModal('delete-chat-popup');
+
+      chats = chats.filter(chat => !chatsToDelete.includes(chat.id));
+      removeChatsFromSelect(chatsToDelete)
+    })
+
+    function removeChatsFromSelect(chatIds) {
+      const select = document.getElementById('chatsToDelete');
+      chatIds.forEach(id => {
+          const option = select.querySelector(`option[value="${id}"]`);
+          if (option) option.remove();
+      });
+    }
 
     function addChatToSidebar(newChat) {
         var chatList = document.querySelector('#chats ul');
@@ -497,6 +554,29 @@
         if(newChat['chat_created_by_self']){
           newChatElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+
+        var newChatObject = {
+          "name": newChat['chat_name'],
+          "image_url": getProfilePicture(newChat['chat_name'].charAt(0).toLowerCase()),
+          "members": [],
+          "chat_id": newChat['chat_id'],
+          "last_message": "No messages yet." 
+        }
+
+        chats.push(newChatObject)
+        updateChatsToDeleteSelect();
+    }
+
+    function updateChatsToDeleteSelect() {
+      const select = document.getElementById('chatsToDelete');
+      select.innerHTML = '';
+
+      chats.forEach(chat => {
+          const option = document.createElement('option');
+          option.value = chat.chat_id;
+          option.textContent = chat.name;
+          select.appendChild(option);
+      });
     }
 
     function setActiveChatById(chat_id) {

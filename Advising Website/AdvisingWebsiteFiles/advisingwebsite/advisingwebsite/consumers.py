@@ -105,21 +105,46 @@ class ChatConsumer(WebsocketConsumer):
 
         last_message_subquery = Message.objects.filter(chat=OuterRef('id')).order_by('-date_sent').values('message_content')[:1]
 
-        filtered_chats = Chat.objects.filter(members__user=user, 
-                                        chat_name__icontains=data['message']).annotate(
-                                            last_message=Coalesce(Subquery(last_message_subquery, output_field=TextField()), Value("", output_field=TextField()))
-                                        ).values('id', 'chat_name', 'last_message')
+        filtered_chats = Chat.objects.filter(
+            members__user=user,
+            members__chat_deleted=False,
+            chat_name__icontains=data['message']
+        ).annotate(
+            last_message=Coalesce(
+                Subquery(last_message_subquery, output_field=TextField()),
+                Value("", output_field=TextField())
+            )
+        ).values('id', 'chat_name', 'last_message')
 
         return self.send_message({
             'command': 'filter_chats',
             'chats': list(filtered_chats)
+        })
+    
+    def delete_chats(self, data):
+        user = User.objects.filter(email=data['deletedBy']).first()
+
+        for chat_id in data['chatIDs']:
+            chat_member = ChatMember.objects.filter(user=user, chat_id=chat_id).first()
+            if chat_member:
+                chat_member.chat_deleted = True
+                chat_member.save()
+
+            all_members = ChatMember.objects.filter(chat_id=chat_id)
+            if all(member.chat_deleted for member in all_members):
+                Chat.objects.filter(id=chat_id).delete()
+
+        self.search_chats({
+            'email': data['deletedBy'],
+            'message': ''
         })
 
     commands = {
         'fetch_messages': fetch_messages,
         'new_message': new_message,
         'new_chat': new_chat,
-        "search_chats": search_chats
+        'search_chats': search_chats,
+        'delete_chats': delete_chats
     }
 
     def connect(self):

@@ -140,6 +140,7 @@
 <script>
     var email = '{{ email|escapejs }}';
     var full_name = '{{ full_name|escapejs }}';
+    var chats = JSON.parse('{{ edit_chat_list|escapejs }}');
 
     email = email.replace(/^"(.*)"$/, '$1');
     full_name = full_name.replace(/^"(.*)"$/, '$1');
@@ -320,9 +321,6 @@
         return $(this).text();
       }).get();
 
-      console.log("Selected IDs:", selectedMembers);
-      console.log("Selected Names:", selectedNames);
-
       return { 'ids': selectedMembers, 'names': selectedNames };
     }
 
@@ -342,8 +340,49 @@
         'chatMemberNames': chatMembers['names'],
         'createdBy': email
       }));
-      closeModal();
+      closeModal('chatPopup');
     });
+
+    function getChatsToDelete(){
+      var selectedChats = $('#chatsToDelete').val();
+      var selectedChatNames = $('#chatsToDelete option:selected').map(function() {
+        return $(this).text();
+      }).get();
+
+      console.log("Selected Chat IDs: ", selectedChats);
+      console.log("Selected Chat Names:", selectedChatNames);
+
+      return selectedChats;
+    }
+
+    document.getElementById('deleteChatForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+      chatsToDelete = getChatsToDelete();
+
+      if(chatSocket.readyState === WebSocket.CLOSED){
+        console.log('WebSocket is not currently ready to send data and is closed.');
+        alert('WebSocket is closed right now. Try again later.');
+        return;
+      }
+
+      chatSocket.send(JSON.stringify({
+        'command': 'delete_chats',
+        'chatIDs': chatsToDelete,
+        'deletedBy': email
+      }));
+      closeModal('delete-chat-popup');
+
+      chats = chats.filter(chat => !chatsToDelete.includes(chat.id));
+      removeChatsFromSelect(chatsToDelete)
+    })
+
+    function removeChatsFromSelect(chatIds) {
+      const select = document.getElementById('chatsToDelete');
+      chatIds.forEach(id => {
+          const option = select.querySelector(`option[value="${id}"]`);
+          if (option) option.remove();
+      });
+    }
 
     function addChatToSidebar(newChat) {
         var chatList = document.querySelector('#chats ul');
@@ -372,6 +411,29 @@
         if(newChat['chat_created_by_self']){
           newChatElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+
+        var newChatObject = {
+          "name": newChat['chat_name'],
+          "image_url": getProfilePicture(newChat['chat_name'].charAt(0).toLowerCase()),
+          "members": [],
+          "chat_id": newChat['chat_id'],
+          "last_message": "No messages yet." 
+        }
+
+        chats.push(newChatObject)
+        updateChatsToDeleteSelect();
+    }
+
+    function updateChatsToDeleteSelect() {
+      const select = document.getElementById('chatsToDelete');
+      select.innerHTML = '';
+
+      chats.forEach(chat => {
+          const option = document.createElement('option');
+          option.value = chat.chat_id;
+          option.textContent = chat.name;
+          select.appendChild(option);
+      });
     }
 
     function setActiveChatById(chat_id) {
