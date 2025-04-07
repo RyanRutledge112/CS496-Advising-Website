@@ -56,7 +56,7 @@
             {% if request.user.id in chat.members %}
             <li class="chat {% if chat.is_active %}active{% endif %}" data-chat-id="{{ chat.chat_id }}" onclick="setActiveChat(this)">
                 <div class="wrap">
-                    <img src="{{ chat.image_url }}" alt="{{ chat.name }}" />
+                    <img src="{{ chat.image_url }}" class="image {% if chat.new_message %}newMessage{% endif %}" alt="{{ chat.name }}" />
                     <div class="meta">
                         <p class="name">{{ chat.name }}</p>
                         <p class="preview">{{ chat.last_message }}</p>
@@ -187,6 +187,8 @@
           }
         } else if (data['command'] === 'filter_chats'){
           updateShownChats(data);
+        } else if (data['command'] === 'chat_ping'){
+          showNewMessage(data['chat']);
         }
     };
 
@@ -301,6 +303,14 @@
       msgListTag.appendChild(imgTag);
       msgListTag.appendChild(messageContainer);
       document.querySelector('#chat-log').appendChild(msgListTag);
+
+      var messagesContainer = document.querySelector('.messages');
+      if (messagesContainer) {
+        // Scroll to the bottom of the chat
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      } else {
+        console.warn('Messages container not found');
+      }
     };
 
     function updateShownChats(data) {
@@ -325,9 +335,11 @@
           .replace(/^(\s*,\s*)+|(\s*,\s*)+$/g, '')
           .trim();
 
+          var imgClass = chat['new_message'] ? 'newMessage' : '';
+
           newChatElement.innerHTML = `
               <div class="wrap">
-                  <img src="${getProfilePicture(chat['chat_name'].charAt(0).toLowerCase())}" alt="${chat['chat_name']}" />
+                  <img src="${getProfilePicture(chat['chat_name'].charAt(0).toLowerCase())}" class="${imgClass}" alt="${chat['chat_name']}" />
                   <div class="meta">
                       <p class="name">${chat['chat_name']}</p>
                       <p class="preview">${chat['last_message'] || 'No messages yet'}</p>
@@ -584,6 +596,33 @@
         if (chatElement) {
             setActiveChat(chatElement);
         }
+    }
+
+    function showNewMessage(data) {
+      document.querySelectorAll('.chat').forEach(chat => {
+          let id = chat.getAttribute('data-chat-id')
+
+          if(String(id) !== String(chat_id)){
+            chatSocket.send(JSON.stringify({
+              'command': 'update_last_viewed',
+              'chat_id': chat_id,
+              'email': email
+            }));
+          }
+
+          if (String(id) === String(data['chat_id'])) {
+            let imgElement = chat.querySelector('.image');
+            let last_message = chat.querySelector('.preview');
+
+
+            if(imgElement && String(id) !== String(chat_id)){
+              imgElement.classList.add('newMessage');
+            }
+            if(last_message){
+              last_message.textContent = data['last_message'];
+            }
+          }
+      });
     }
 
     function getProfilePicture(letter) {

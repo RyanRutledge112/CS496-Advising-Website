@@ -358,17 +358,22 @@ def chathome(request):
     if user.is_advisor:
         other_users = User.objects.exclude(id=user.id)
 
-    chats = [
-        {
-            "name": user_chat.chat.chat_name.replace(request.user.get_full_name(), "").strip(', ').replace(" ,", ""),
-            "image_url": get_profile_picture(user_chat.chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", "")[0].lower()),
-            "members": list(User.objects.filter(joined_chats__chat=user_chat.chat).values_list("id", flat=True)),
-            "chat_id": user_chat.chat.id,
-            "last_message": user_chat.chat.chat_messages.order_by('-date_sent').first().message_content
-            if user_chat.chat.chat_messages.exists() else "No messages yet."
-        }
-        for user_chat in user_chats
-    ]
+    chats = []
+
+    for user_chat in user_chats:
+        chat = user_chat.chat
+        last_msg = chat.last_message()
+        chat_name = chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", "")
+        image_url = get_profile_picture(chat_name[0].lower()) if chat_name else ""
+
+        chats.append({
+            "name": chat_name,
+            "image_url": image_url,
+            "members": list(User.objects.filter(joined_chats__chat=chat).values_list("id", flat=True)),
+            "chat_id": chat.id,
+            "last_message": last_msg.message_content if last_msg else "No messages yet.",
+            "new_message": last_msg and user_chat.chat_last_viewed < last_msg.date_sent
+        })
 
     return render(request, 'chat/room_base.html', {
         "chats": chats, 
@@ -391,20 +396,29 @@ def room(request, chat_id):
     user_chats = ChatMember.objects.filter(user=user, chat_deleted=False).select_related("chat")
     other_users = User.objects.filter(is_advisor=True).exclude(id=user.id)
 
+    chats = []
+
     if user.is_advisor:
         other_users = User.objects.exclude(id=user.id)
 
-    chats = [
-        {
-            "name": user_chat.chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", ""),
-            "image_url": get_profile_picture(user_chat.chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", "")[0].lower()),
-            "members": list(User.objects.filter(joined_chats__chat=user_chat.chat).values_list("id", flat=True)),
-            "chat_id": user_chat.chat.id,
-            "last_message": user_chat.chat.chat_messages.order_by('-date_sent').first().message_content
-            if user_chat.chat.chat_messages.exists() else "No messages yet.",
-        }
-        for user_chat in user_chats
-    ]
+    for user_chat in user_chats:
+        chat = user_chat.chat
+        last_msg = chat.last_message()
+        chat_name = chat.chat_name.replace(user.get_full_name(), "").strip(', ').replace(" ,", "")
+        image_url = get_profile_picture(chat_name[0].lower()) if chat_name else ""
+
+        if(chat_id == chat.id):
+            user_chat.chat_last_viewed = timezone.now()
+            user_chat.save()
+
+        chats.append({
+            "name": chat_name,
+            "image_url": image_url,
+            "members": list(User.objects.filter(joined_chats__chat=chat).values_list("id", flat=True)),
+            "chat_id": chat.id,
+            "last_message": last_msg.message_content if last_msg else "No messages yet.",
+            "new_message": last_msg and user_chat.chat_last_viewed < last_msg.date_sent
+        })
 
     chats.sort(key=lambda x: x["chat_id"] != int(chat_id))
     

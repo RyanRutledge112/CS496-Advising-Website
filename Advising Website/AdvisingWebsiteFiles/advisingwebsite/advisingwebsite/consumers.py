@@ -2,9 +2,11 @@ from django.contrib.auth import get_user_model
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import json
+
 from advisingwebsiteapp.models import Message, Chat, ChatMember
-from django.db.models import OuterRef, Subquery, Value, TextField
+from django.db.models import OuterRef, Subquery, Case, When, Value, F, TextField, DateTimeField, BooleanField
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -12,7 +14,7 @@ class ChatConsumer(WebsocketConsumer):
 
     def fetch_messages(self, data):
         chat = Chat.objects.filter(id=data['chat_id']).first()
-        messages = chat.last_10_messages()
+        messages = chat.last_30_messages()
         messages = messages[::-1] #Flips message order so they are in the correct order to be displayed
         content = {
             'command': 'messages',
@@ -24,10 +26,34 @@ class ChatConsumer(WebsocketConsumer):
         author = data['from']
         user = User.objects.filter(email=author).first()
         chat_member = user.joined_chats.filter(chat__id=data['chat_id']).first()
+        chat = Chat.objects.filter(id=data['chat_id']).first()
+
         message = Message.objects.create(
             sent_by_member=chat_member,
-            chat=Chat.objects.filter(id=data['chat_id']).first(),
+            chat=chat,
             message_content=data['message'])
+        
+        participants = ChatMember.objects.filter(chat=chat).select_related('user')
+
+        print("Chat participants:", participants)
+
+        #sends message out to participants in the chat so their chats are dynamically updated as necessary
+        for member in participants:
+            async_to_sync(self.channel_layer.group_send)(
+                f'user_{member.user.id}',
+                {
+                    'type': 'chat_message',
+                    'message': {
+                        'command': 'chat_ping',
+                        'chat': {
+                            'chat_id': chat.id,
+                            'last_message': data['message'],
+                            'message_created_by_self': False
+                        }
+                    }
+                }
+            )
+
         content = {
             'command': 'new_message',
             'message': self.message_to_json(message)
@@ -103,18 +129,39 @@ class ChatConsumer(WebsocketConsumer):
     def search_chats(self, data):
         user = User.objects.filter(email=data['email']).first()
 
-        last_message_subquery = Message.objects.filter(chat=OuterRef('id')).order_by('-date_sent').values('message_content')[:1]
+        last_message_content_subquery = Message.objects.filter(
+            chat=OuterRef('chat_id')
+        ).order_by('-date_sent').values('message_content')[:1]
 
-        filtered_chats = Chat.objects.filter(
-            members__user=user,
-            members__chat_deleted=False,
-            chat_name__icontains=data['message']
+        last_message_date_subquery = Message.objects.filter(
+            chat=OuterRef('chat_id')
+        ).order_by('-date_sent').values('date_sent')[:1]
+
+        chat_memberships = ChatMember.objects.filter(
+            user=user,
+            chat_deleted=False
         ).annotate(
             last_message=Coalesce(
-                Subquery(last_message_subquery, output_field=TextField()),
+                Subquery(last_message_content_subquery, output_field=TextField()),
                 Value("", output_field=TextField())
+            ),
+            last_message_date=Subquery(last_message_date_subquery, output_field=DateTimeField()),
+            new_message=Case(
+                When(
+                    last_message_date__gt=F('chat_last_viewed'),
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField()
             )
-        ).values('id', 'chat_name', 'last_message')
+        ).select_related("chat")
+
+        filtered_chats = [{
+            "id": cm.chat.id,
+            "chat_name": cm.chat.chat_name.replace(user.get_full_name(), "").strip(", ").replace(" ,", ""),
+            "last_message": cm.last_message,
+            "new_message": cm.new_message
+        } for cm in chat_memberships if data['message'].lower() in cm.chat.chat_name.lower()]
 
         return self.send_message({
             'command': 'filter_chats',
@@ -139,12 +186,22 @@ class ChatConsumer(WebsocketConsumer):
             'message': ''
         })
 
+    def update_last_viewed(self, data):
+        user = User.objects.filter(email=data['email']).first()
+        chat = Chat.objects.filter(id=data['chat_id']).first()
+        user_member = ChatMember.objects.filter(user=user, chat=chat).first()
+
+        if(user_member):
+            user_member.chat_last_viewed = timezone.now()
+            user_member.save()
+
     commands = {
         'fetch_messages': fetch_messages,
         'new_message': new_message,
         'new_chat': new_chat,
         'search_chats': search_chats,
-        'delete_chats': delete_chats
+        'delete_chats': delete_chats,
+        'update_last_viewed': update_last_viewed
     }
 
     def connect(self):

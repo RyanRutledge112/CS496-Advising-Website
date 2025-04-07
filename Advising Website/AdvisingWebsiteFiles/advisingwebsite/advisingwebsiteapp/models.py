@@ -69,8 +69,11 @@ class Chat(models.Model):
 
     def __str__(self):
         return self.chat_name
-    def last_10_messages(self):
-        return self.chat_messages.order_by('-date_sent')[:10]
+    def last_30_messages(self):
+        return self.chat_messages.order_by('-date_sent')[:30]
+    def last_message(self):
+        last_msg = self.chat_messages.order_by('-date_sent').first()
+        return last_msg if last_msg else None
 
 class ChatMember(models.Model):
     user = models.ForeignKey(User, related_name="joined_chats", on_delete=models.CASCADE)
