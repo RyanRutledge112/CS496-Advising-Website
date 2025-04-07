@@ -43,7 +43,7 @@ def register(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         student_id = request.POST.get('student_id')
-        selected_degrees = request.POST.getlist('degrees')
+        selected_degrees = request.POST.getlist('degrees[]')
 
         # Set default values for is_student and is_advisor
         is_student = True  # Default to True (most users are students)
@@ -310,7 +310,7 @@ def update_user_degrees(request):
         current_degree_number = request.POST.get('current_degree')  
 
         # Get the selected new degree (for addition)
-        new_degree_id = request.POST.get('degrees')  
+        new_degree_id = request.POST.get('degree')  
 
         # Remove the selected current degree
         if current_degree_number:

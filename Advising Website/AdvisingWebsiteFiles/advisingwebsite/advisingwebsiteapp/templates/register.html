@@ -57,44 +57,56 @@
       maxlength="9" minlength="9" title="Student ID must be exactly 9 digits." required>
     </div>
 
-    <div class="mb-3">
-      <label for="degrees" class="form-label">Select Your Degrees:</label>
-      <div class="tip">
-        <small class="form-text text-muted">Hold Ctrl (Cmd on Mac) to select multiple. Max: 6.</small>
-      </div>
-      <input type="text" id="degreeSearch" class="form-control" placeholder="Search for a degree..." onkeyup="filterDegrees()">
-      <select id="degrees" name="degrees" class="form-control" multiple>
+    <label for="degreeSelect">Select Degrees:(max of 6 degrees)</label>
+    <div class="select2-wrapper">
+      <select id="degreeSelect" name="degrees[]" multiple="multiple">
         {% for category, degrees in grouped_degrees.items %}
-            <optgroup label="{{ category }}">
-                {% for degree in degrees %}
-                    <option value="{{ degree.id }}">
-                        {{ degree.degree_name }} -
-                        <br> Degree Reference Number: {{ degree.degree_number }} 
-                        {% if degree.concentration %} - <br> Concentration: {{ degree.concentration }} {% endif %}
-                    </option>
-                {% endfor %}
-            </optgroup>
+          <optgroup label="{{ category }}">
+            {% for degree in degrees %}
+              <option value="{{ degree.id }}">
+                {{ degree.degree_name }} - Degree Reference Number: {{ degree.degree_number }}
+                {% if degree.concentration %} - Concentration: {{ degree.concentration }} {% endif %}
+              </option>
+            {% endfor %}
+          </optgroup>
         {% endfor %}
       </select>
     </div>
+
     <button type="submit" class="btn btn-primary">Create Account</button>
   </form>
 
   <p>Already have an account? <a href="{% url 'login' %}">Log In</a></p>
 </div>
-
+{% endblock %}
+{% block extra_scripts %}
 <script>
   // JavaScript to toggle the second major fields when the checkbox is checked
   document.addEventListener("DOMContentLoaded", function () {
-    const degreeSelect = document.getElementById("degrees");
+    const degreeSelect = document.getElementById("degreeSelect");
 
     degreeSelect.addEventListener("change", function() {
       const selectedOptions = [...degreeSelect.selectedOptions];
 
-      if (selectedOptions.length > 9) {
+      if (selectedOptions.length > 6) {
         alert("You can select up to only 6 degrees.");
         selectedOptions[selectedOptions.length - 1].selected = false;
       }
+    });
+    // no more than 6 degrees selected
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+      const selectedOptions = [...degreeSelect.selectedOptions];
+      if (selectedOptions.length > 6) {
+        event.preventDefault();  // Prevent form submission
+        alert("You can select up to only 6 degrees.");
+      }
+    });
+
+    $('#degreeSelect').select2({
+      placeholder: "Select degrees",
+      allowClear: true,
+      width: '100%'
     });
   });
   function filterDegrees() {
@@ -110,6 +122,7 @@
             options[i].style.display = "none";
         }
     }
-}
+  }
+
 </script>
 {% endblock %}

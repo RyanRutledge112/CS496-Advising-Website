@@ -130,6 +130,7 @@ body.register main.container-fluid {
 .register-container button{
     background-color: #B01E24;
     border: #B01E24;
+    margin-top: 10px;
 }
 
 .register-container button:hover{
@@ -218,6 +219,7 @@ body.profile main.container-fluid {
     border-radius: 3px;
     background-color: #B01E24;
     border: #B01E24;
+    margin-top: 10%;
 }
 
 .profile-container button:hover{
@@ -294,19 +296,10 @@ footer.image-credit a:hover {
 }
 
 /*Dropdown menu Styling*/
-#degrees {
+#degreeSearch {
+    height: 60px;
+    padding: 10px; 
+    border-radius: 2px;
     width: 100%; 
-    max-width: 500px;
-    overflow-x: auto; 
-    display: block;
-    min-height: 150px;  
-    max-height: 400px; 
-    overflow-y: auto;
-    resize: vertical;
-}
-
-#degrees option {
-    display: block;
-    width: 100%;   
-    box-sizing: border-box; 
+    font-family: Bebas Neue;
 }

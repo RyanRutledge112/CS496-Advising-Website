@@ -46,24 +46,20 @@
         </select>
       </div>
 
-      <!-- Select New Degree -->
-      <div class="mb-3">
-        <label class="form-label">Select your new degree</label>
-        <input type="text" id="degreeSearch" class="form-control" placeholder="Search for a degree..." onkeyup="filterDegrees()">
-        <select id="degrees" name="degrees" class="form-control">
-          <option value="" selected>-- Select a New Degree --</option>
-            {% for category, degrees in grouped_degrees.items %}
-                <optgroup label="{{ category }}">
-                    {% for degree in degrees %}
-                        <option value="{{ degree.id }}">
-                            {{ degree.degree_name }} -
-                            <br> Degree Reference Number: {{ degree.degree_number }} 
-                            {% if degree.concentration %} - <br> Concentration: {{ degree.concentration }} {% endif %}
-                        </option>
-                    {% endfor %}
-                </optgroup>
+    <label for="degreeSelect">Select New Degree:</label>
+    <div class="select2-wrapper">
+      <select id="degreeSelect" name="degree">
+        {% for category, degrees in grouped_degrees.items %}
+          <optgroup label="{{ category }}">
+            {% for degree in degrees %}
+              <option value="{{ degree.id }}">
+                {{ degree.degree_name }} - Degree Reference Number: {{ degree.degree_number }}
+                {% if degree.concentration %} - Concentration: {{ degree.concentration }} {% endif %}
+              </option>
             {% endfor %}
-        </select>
+          </optgroup>
+        {% endfor %}
+      </select>
     </div>
 
       <!-- Submit Button -->
@@ -75,12 +71,18 @@
 <script>
   // JavaScript to toggle the second major fields when the checkbox is checked
   document.addEventListener("DOMContentLoaded", function () {
-    const degreeSelect = document.getElementById("degrees");
+    const degreeSelect = document.getElementById("degreeSelect");
 
     degreeSelect.addEventListener("change", function() {
-        const selectedOptions = [...degreeSelect.selectedOptions];
+      const selectedOptions = [...degreeSelect.selectedOptions];
     });
-});
+
+    $('#degreeSelect').select2({
+      placeholder: "Select degrees",
+      allowClear: true,
+      width: '100%'
+    });
+  });
 
 function filterDegrees() {
     let input = document.getElementById("degreeSearch").value.toLowerCase();
