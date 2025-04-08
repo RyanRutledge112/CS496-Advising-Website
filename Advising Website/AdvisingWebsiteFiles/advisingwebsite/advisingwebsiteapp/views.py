@@ -93,56 +93,6 @@ def register(request):
 
     return render(request, 'register.html', {'grouped_degrees': grouped_degrees})
 
-@login_required
-def messages_page(request):
-    # Get all chats where the user is a member
-    user_chats = Chat.objects.filter(chatmember__user=request.user)
-
-    # Get latest message and unread count for each conversation
-    conversations = []
-    for chat in user_chats:
-        last_message = Message.objects.filter(chat=chat).order_by('-date_sent').first()
-
-        # Get user's chat member record
-        chat_member = ChatMember.objects.get(chat=chat, user=request.user)
-
-        # Count unread messages (messages sent after user last viewed)
-        unread_count = Message.objects.filter(chat=chat, date_sent__gt=chat_member.chat_last_viewed).count()
-
-        conversations.append({
-            'chat': chat,
-            'last_message': last_message.message_content if last_message else "No messages yet.",
-            'unread_count': unread_count,
-        })
-
-    return render(request, 'messages.html', {
-        'conversations': conversations
-    })
-
-@login_required
-def send_message(request):
-    if request.method == "POST":
-        chat_id = request.POST.get('chat_id')
-        message_content = request.POST.get('message_content')
-
-        chat = Chat.objects.get(id=chat_id)
-        chat_member = ChatMember.objects.get(chat=chat, user=request.user)
-
-        Message.objects.create(
-            chat=chat,
-            sent_by_member=chat_member,
-            message_content=message_content
-        )
-
-        # Update the chat last viewed
-        chat_member.chat_last_viewed = timezone.now()
-        chat_member.save()
-
-    return redirect('messages')
-
-def messages(request):
-    return render(request, 'messages.html')
-
 def upload_transcript(request):
     if request.method == "POST" and request.FILES.get("pdfFile"):
         uploaded_file = request.FILES["pdfFile"]

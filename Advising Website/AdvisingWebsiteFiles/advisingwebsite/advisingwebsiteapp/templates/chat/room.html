@@ -529,6 +529,14 @@
 
       chats = chats.filter(chat => !chatsToDelete.includes(chat.id));
       removeChatsFromSelect(chatsToDelete)
+
+      chatsToDelete.forEach(id => {
+        console.log('id: ', id);
+        console.log('room id: ', chat_id);
+        if (id === chat_id) {
+          window.location.href = "/chat/";
+        }
+      });
     })
 
     function removeChatsFromSelect(chatIds) {
