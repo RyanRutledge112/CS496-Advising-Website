@@ -126,6 +126,7 @@ class Course(models.Model):
         if self.is_colonade:
             result += f'\nColonade requirement for: {self.colonade_id}'
         return result.strip()
+
 class DegreeCourse(models.Model):
     degree = models.ForeignKey(Degree, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -155,4 +156,4 @@ class UserDegree(models.Model):
     degree = models.ForeignKey(Degree, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"Student {self.user_student_id.get_full_name} with a student id of {self.user_student_id.student_id} is going for a degree in {self.degree.__str__}".strip()
+        return f"Student {self.user_student_id.get_full_name()} with a student id of {self.user_student_id.student_id} is going for a degree in {self.degree.__str__()}".strip()
