@@ -1,3 +1,5 @@
+from datetime import timedelta
+import time
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -88,21 +90,12 @@ class CustomUserModelTests(TestCase):
         self.assertEqual(user.get_full_name(), "Alice Smith")
         self.assertEqual(user.get_short_name(), "Alice")
 
-    def test_get_full_name_and_short_name_when_name_is_blank(self):
-        user = User.objects.create_user(
-            email="noname@example.com",
-            password="strongpass",
-            is_student=True,
-            is_advisor=False,
-            student_id=555555
-        )
-        self.assertEqual(user.get_full_name(), "noname")
-        self.assertEqual(user.get_short_name(), "noname")
-
     def test_get_student_id(self):
         user = User.objects.create_user(
             email="idtest@example.com",
             password="securepass",
+            first_name='John',
+            last_name='Doe',
             is_student=True,
             is_advisor=False,
             student_id=888888
@@ -122,6 +115,7 @@ class ChatModelTests(TestCase):
             student_id=100001
         )
         self.chat = Chat.objects.create(chat_name="Test Chat")
+        self.chat_member = ChatMember.objects.create(user=self.user, chat=self.chat)
 
     def test_str_method_returns_chat_name(self):
         self.assertEqual(str(self.chat), "Test Chat")
@@ -130,25 +124,27 @@ class ChatModelTests(TestCase):
         # Create 35 messages
         for i in range(35):
             Message.objects.create(
+                sent_by_member=self.chat_member,
                 chat=self.chat,
-                user=self.user,
                 message_content=f"Message {i}",
                 date_sent=timezone.now()
             )
+            time.sleep(0.2) #ensures messages are created one after another without any overlap so they can be properly loaded by time
         last_30 = self.chat.last_30_messages()
         self.assertEqual(len(last_30), 30)
         self.assertEqual(last_30[0].message_content, "Message 34")
 
     def test_last_message_returns_latest(self):
         Message.objects.create(
+            sent_by_member=self.chat_member,
             chat=self.chat,
-            user=self.user,
             message_content="First message",
             date_sent=timezone.now()
         )
+        time.sleep(0.2) #ensures messages are created one after another without any overlap so they can be properly loaded by time
         last = Message.objects.create(
+            sent_by_member=self.chat_member,
             chat=self.chat,
-            user=self.user,
             message_content="Most recent message",
             date_sent=timezone.now() + timezone.timedelta(minutes=5)
         )

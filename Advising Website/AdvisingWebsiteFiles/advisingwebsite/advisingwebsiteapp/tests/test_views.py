@@ -36,7 +36,15 @@ class TestLoginView(TestCase):
     def setUp(self):
         self.login_url = reverse('login')
         self.home_url = reverse('home')
-        self.user = User.objects.create_user(email='test@example.com', password='testpassword123')
+        self.user = User.objects.create_user(
+            email="user@example.com",
+            first_name="John",
+            last_name="Doe",
+            password="securepass!",
+            is_student=True,
+            is_advisor=False,
+            student_id=100001
+        )
 
     def test_login_view_get(self):
         response = self.client.get(self.login_url)
@@ -45,8 +53,8 @@ class TestLoginView(TestCase):
 
     def test_login_view_post_valid_credentials(self):
         response = self.client.post(self.login_url, {
-            'email': 'test@example.com',
-            'password': 'testpassword123',
+            'email': 'user@example.com',
+            'password': 'securepass!',
         })
         self.assertRedirects(response, self.home_url)
 
@@ -55,7 +63,7 @@ class TestLoginView(TestCase):
 
     def test_login_view_post_invalid_credentials(self):
         response = self.client.post(self.login_url, {
-            'email': 'test@example.com',
+            'email': 'user@example.com',
             'password': 'wrongpassword',
         })
         self.assertEqual(response.status_code, 200)
@@ -86,7 +94,7 @@ class TestRegisterView(TestCase):
             'last_name': 'Smith',
             'email': 'alice@example.com',
             'password': 'StrongPass1!',
-            'student_id': '123456789',
+            'student_id': 123456789,
             'degrees[]': [str(self.degree.id)],
         })
 
@@ -99,26 +107,42 @@ class TestRegisterView(TestCase):
         self.assertTrue(UserDegree.objects.filter(user_student_id=user, degree=self.degree).exists())
 
     def test_register_duplicate_email(self):
-        User.objects.create_user(email='bob@example.com', password='TestPass1!', student_id='987654321')
+        User.objects.create_user(
+            email="bob@example.com",
+            first_name="Bob",
+            last_name="Jones",
+            password="securepass",
+            is_student=True,
+            is_advisor=False,
+            student_id=100009800
+        )
         response = self.client.post(self.register_url, {
             'first_name': 'Bob',
             'last_name': 'Jones',
             'email': 'bob@example.com',
             'password': 'AnotherPass1!',
-            'student_id': '123456789',
+            'student_id': 123456789,
         })
         self.assertRedirects(response, self.register_url)
         messages = list(response.wsgi_request._messages)
-        self.assertTrue(any("already registered" in str(m) for m in messages))
+        self.assertTrue(any("email is already registered" in str(m) for m in messages))
 
     def test_register_duplicate_student_id(self):
-        User.objects.create_user(email='bob@example.com', password='TestPass1!', student_id='123456789')
+        User.objects.create_user(
+            email="charlie@example.com",
+            first_name="Charlie",
+            last_name="Brown",
+            password="securepass",
+            is_student=True,
+            is_advisor=False,
+            student_id=123456789
+        )
         response = self.client.post(self.register_url, {
             'first_name': 'Charlie',
             'last_name': 'Brown',
-            'email': 'charlie@example.com',
+            'email': 'charlie@2example.com',
             'password': 'StrongPass1!',
-            'student_id': '123456789',
+            'student_id': 123456789,
         })
         self.assertRedirects(response, self.register_url)
         messages = list(response.wsgi_request._messages)
@@ -130,7 +154,7 @@ class TestRegisterView(TestCase):
             'last_name': 'Lee',
             'email': 'dave@example.com',
             'password': 'weakpass',
-            'student_id': '111222333',
+            'student_id': 111222333,
         })
         self.assertRedirects(response, self.register_url)
         messages = list(response.wsgi_request._messages)
@@ -138,9 +162,17 @@ class TestRegisterView(TestCase):
 
 class UploadTranscriptViewTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="student@example.com", password="TestPass123!", student_id="123456789")
+        self.user = User.objects.create_user(
+            email="student@example.com", 
+            password="TestPass123!", 
+            student_id=123456789, 
+            first_name='Stu', 
+            last_name='Dent',
+            is_student=True,
+            is_advisor=False,
+        )
         self.client.login(email="student@example.com", password="TestPass123!")
-        self.url = reverse("upload_transcript")
+        self.url = reverse("uploadTranscript")
 
     def test_get_upload_transcript(self):
         response = self.client.get(self.url)
@@ -181,6 +213,17 @@ class UploadTranscriptViewTest(TestCase):
 
     @patch("advisingwebsiteapp.views.process_and_recommend_courses", side_effect=AttributeError)
     def test_post_attribute_error(self, mock_process):
+        user_with_no_student_id = User.objects.create_user(
+            email="no_student_id@example.com",
+            password="TestPass123!",
+            student_id=None,
+            first_name='Jane',
+            last_name='Doe',
+            is_student=True,
+            is_advisor=False,
+        )
+        self.client.login(email="no_student_id@example.com", password="TestPass123!")
+
         fake_file = io.BytesIO(b"Fake PDF content")
         fake_file.name = "transcript.pdf"
 
@@ -190,6 +233,7 @@ class UploadTranscriptViewTest(TestCase):
             "inputCreditHours": "12"
         }, format="multipart")
 
+        # Ensure the correct error message is rendered
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "uploadTranscript.html")
         self.assertContains(response, "Student ID not found in user profile.")
@@ -199,7 +243,11 @@ class ProcessAndRecommendCoursesTest(TestCase):
         self.user = User.objects.create_user(
             email="test@example.com",
             password="TestPass123!",
-            student_id="123456789"
+            student_id=123456789,
+            first_name="Test",
+            is_student=True,
+            is_advisor=False,
+            last_name='Example'
         )
         self.file_path = "fake_path/transcript.pdf"
         self.selected_term = "fall"
@@ -283,13 +331,17 @@ class ProfileViewTest(TestCase):
         self.user = User.objects.create_user(
             email="testuser@example.com",
             password="Testpass123!",
-            student_id="123456789"
+            student_id=123456789,
+            first_name='Test',
+            is_student=True,
+            is_advisor=False,
+            last_name="Example"
         )
 
         # Create degrees
-        self.major = Degree.objects.create(degree_name="Computer Science", degree_number="CS123", degree_type=1)
-        self.minor = Degree.objects.create(degree_name="Mathematics", degree_number="MA123", degree_type=2, concentration="Applied Math")
-        self.certificate = Degree.objects.create(degree_name="Cybersecurity", degree_number="CY123", degree_type=3)
+        self.major = Degree.objects.create(degree_name="Computer Science", degree_number="CS123", degree_type=1, hours_needed=120, concentration="General")
+        self.minor = Degree.objects.create(degree_name="Mathematics", degree_number="MA123", degree_type=2, concentration="Applied Math", hours_needed=120)
+        self.certificate = Degree.objects.create(degree_name="Cybersecurity", degree_number="CY123", degree_type=3, hours_needed=120, concentration="General")
 
         # Link degrees to user
         UserDegree.objects.create(user_student_id=self.user, degree=self.major)
@@ -328,7 +380,9 @@ class UpdateProfileViewTest(TestCase):
             password='Testpass123!',
             first_name='Old',
             last_name='Name',
-            student_id='123456789'
+            is_student=True,
+            is_advisor=False,
+            student_id=123456789
         )
         self.client.login(email='testuser@example.com', password='Testpass123!')
 
@@ -370,19 +424,25 @@ class UpdateUserDegreesViewTest(TestCase):
             password='StrongPass123!',
             first_name='Test',
             last_name='User',
-            student_id='123456789'
+            is_student=True,
+            is_advisor=False,
+            student_id=123456789
         )
         self.client.login(email='student@example.com', password='StrongPass123!')
 
         self.degree1 = Degree.objects.create(
             degree_name='Computer Science',
             degree_number='CS101',
-            degree_type=1
+            degree_type=1,
+            hours_needed=120,
+            concentration="General"
         )
         self.degree2 = Degree.objects.create(
             degree_name='Data Science',
             degree_number='DS201',
-            degree_type=1
+            degree_type=1,
+            hours_needed=120,
+            concentration="General"
         )
         # Initially assign degree1
         self.user_degree = UserDegree.objects.create(
@@ -391,7 +451,7 @@ class UpdateUserDegreesViewTest(TestCase):
         )
 
     def test_update_user_degrees_removes_and_adds(self):
-        response = self.client.post(reverse('update_user_degrees'), {
+        response = self.client.post(reverse('update_profile'), {
             'current_degree': self.degree1.degree_number,
             'degree': self.degree2.id
         })
@@ -406,7 +466,7 @@ class UpdateUserDegreesViewTest(TestCase):
 
     def test_update_user_degrees_only_adds_if_no_duplicate(self):
         # Try adding degree1 again (already exists)
-        response = self.client.post(reverse('update_user_degrees'), {
+        response = self.client.post(reverse('update_profile'), {
             'degree': self.degree1.id
         })
 
@@ -422,12 +482,14 @@ class ChangePasswordViewTest(TestCase):
             password='OldPassword123!',
             first_name='Test',
             last_name='User',
-            student_id='987654321'
+            is_student=True,
+            is_advisor=False,
+            student_id=987654321
         )
         self.client.login(email='testuser@example.com', password='OldPassword123!')
 
     def test_change_password_successfully(self):
-        response = self.client.post(reverse('change_password'), {
+        response = self.client.post(reverse('changePassword'), {
             'old_password': 'OldPassword123!',
             'new_password1': 'NewPassword456!',
             'new_password2': 'NewPassword456!'
@@ -439,7 +501,7 @@ class ChangePasswordViewTest(TestCase):
         self.assertTrue(self.user.check_password('NewPassword456!'))
 
     def test_change_password_wrong_old_password(self):
-        response = self.client.post(reverse('change_password'), {
+        response = self.client.post(reverse('changePassword'), {
             'old_password': 'WrongOldPass!',
             'new_password1': 'NewPassword456!',
             'new_password2': 'NewPassword456!'
@@ -451,7 +513,7 @@ class ChangePasswordViewTest(TestCase):
         self.assertTrue(self.user.check_password('OldPassword123!'))
 
     def test_change_password_mismatch(self):
-        response = self.client.post(reverse('change_password'), {
+        response = self.client.post(reverse('changePassword'), {
             'old_password': 'OldPassword123!',
             'new_password1': 'NewPassword456!',
             'new_password2': 'Mismatch789!'
@@ -471,7 +533,8 @@ class ChatHomeViewTest(TestCase):
             first_name='Stu',
             last_name='Dent',
             is_student=True,
-            student_id='123456789'
+            is_advisor=False,
+            student_id=123456789
         )
 
         self.advisor = User.objects.create_user(
@@ -479,8 +542,9 @@ class ChatHomeViewTest(TestCase):
             password='TestPass123!',
             first_name='Ad',
             last_name='Visor',
+            is_student=False,
             is_advisor=True,
-            student_id='987654321'
+            student_id=987654321
         )
 
         self.chat = Chat.objects.create(chat_name='Stu Dent, Ad Visor')
@@ -490,7 +554,7 @@ class ChatHomeViewTest(TestCase):
         # Simulate a message
         self.last_message = Message.objects.create(
             chat=self.chat,
-            sender=self.advisor,
+            sent_by_member=self.chat_member_advisor,
             message_content='Hello!',
             date_sent=timezone.now()
         )
@@ -501,7 +565,7 @@ class ChatHomeViewTest(TestCase):
         self.client.login(email='student@example.com', password='TestPass123!')
 
     def test_chathome_view_renders_for_logged_in_user(self):
-        response = self.client.get(reverse('chathome'))
+        response = self.client.get(reverse('chatHome'))
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'chat/room_base.html')
@@ -516,7 +580,7 @@ class ChatHomeViewTest(TestCase):
         self.chat_member_student.chat_last_viewed = self.last_message.date_sent + timezone.timedelta(minutes=1)
         self.chat_member_student.save()
 
-        response = self.client.get(reverse('chathome'))
+        response = self.client.get(reverse('chatHome'))
         chats = response.context['chats']
         self.assertFalse(any(chat['new_message'] for chat in chats))  # No new messages
 
@@ -530,7 +594,8 @@ class ChatRoomViewTest(TestCase):
             first_name='Stu',
             last_name='Dent',
             is_student=True,
-            student_id='123456789'
+            is_advisor=False,
+            student_id=123456789
         )
 
         self.advisor = User.objects.create_user(
@@ -539,7 +604,8 @@ class ChatRoomViewTest(TestCase):
             first_name='Ad',
             last_name='Visor',
             is_advisor=True,
-            student_id='987654321'
+            is_student=False,
+            student_id=987654321
         )
 
         self.chat = Chat.objects.create(chat_name='Stu Dent, Ad Visor')
@@ -549,7 +615,7 @@ class ChatRoomViewTest(TestCase):
         # Add message
         self.message = Message.objects.create(
             chat=self.chat,
-            sender=self.advisor,
+            sent_by_member=self.chat_member_advisor,
             message_content='Hey!',
             date_sent=timezone.now()
         )
@@ -583,7 +649,10 @@ class ChatRoomViewTest(TestCase):
             email='outsider@example.com',
             password='TestPass123!',
             first_name='Out',
-            last_name='Sider'
+            last_name='Sider',
+            is_student=True,
+            is_advisor=False,
+            student_id=10000000
         )
         self.client.login(email='outsider@example.com', password='TestPass123!')
         response = self.client.get(reverse('room', args=[self.chat.id]))
@@ -604,7 +673,8 @@ class CheckChatMembershipViewTest(TestCase):
             first_name='Stu',
             last_name='Dent',
             is_student=True,
-            student_id='123456789'
+            is_advisor=False,
+            student_id=123456789
         )
 
         self.advisor = User.objects.create_user(
@@ -612,8 +682,9 @@ class CheckChatMembershipViewTest(TestCase):
             password='TestPass123!',
             first_name='Ad',
             last_name='Visor',
+            is_student=False,
             is_advisor=True,
-            student_id='987654321'
+            student_id=987654321
         )
 
         # Creating chat and adding the student to it
