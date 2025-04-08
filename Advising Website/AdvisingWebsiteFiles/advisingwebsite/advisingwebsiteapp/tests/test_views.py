@@ -2,10 +2,13 @@ import csv
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase, Client
 from django.urls import reverse
-from advisingwebsiteapp.models import Chat, ChatMember, Message, Degree, UserDegree, Course, Prerequisites, DegreeCourse
+from advisingwebsiteapp.models import Chat, ChatMember, Message, Degree, UserDegree
 from django.contrib import auth
 from unittest.mock import patch, MagicMock
 import io
+from django.http import JsonResponse
+from django.contrib.auth import authenticate
+from django.utils import timezone
 
 from advisingwebsiteapp.views import download_recommendations, process_and_recommend_courses
 
@@ -273,3 +276,389 @@ class DownloadRecommendationsTest(TestCase):
         # Check course data
         self.assertEqual(rows[1], ['CS 101', '3'])
         self.assertEqual(rows[2], ['MATH 200', '4'])
+
+class ProfileViewTest(TestCase):
+    def setUp(self):
+        # Create test user
+        self.user = User.objects.create_user(
+            email="testuser@example.com",
+            password="Testpass123!",
+            student_id="123456789"
+        )
+
+        # Create degrees
+        self.major = Degree.objects.create(degree_name="Computer Science", degree_number="CS123", degree_type=1)
+        self.minor = Degree.objects.create(degree_name="Mathematics", degree_number="MA123", degree_type=2, concentration="Applied Math")
+        self.certificate = Degree.objects.create(degree_name="Cybersecurity", degree_number="CY123", degree_type=3)
+
+        # Link degrees to user
+        UserDegree.objects.create(user_student_id=self.user, degree=self.major)
+        UserDegree.objects.create(user_student_id=self.user, degree=self.minor)
+        UserDegree.objects.create(user_student_id=self.user, degree=self.certificate)
+
+        self.client = Client()
+        self.client.login(email="testuser@example.com", password="Testpass123!")
+
+    def test_profile_view_loads_correctly(self):
+        response = self.client.get(reverse("profile"))  # Adjust the URL name if needed
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'profile.html')
+
+        # Check degrees are in context
+        self.assertIn('majors', response.context)
+        self.assertIn('minors', response.context)
+        self.assertIn('certificates', response.context)
+        self.assertIn('concentrations', response.context)
+
+        self.assertIn(self.major, response.context['majors'])
+        self.assertIn(self.minor, response.context['minors'])
+        self.assertIn(self.certificate, response.context['certificates'])
+
+        # Check concentrations for minor
+        concentrations = response.context['concentrations']
+        self.assertEqual(len(concentrations['minor']), 1)
+        self.assertEqual(concentrations['minor'][0]['concentration'], "Applied Math")
+
+class UpdateProfileViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            email='testuser@example.com',
+            password='Testpass123!',
+            first_name='Old',
+            last_name='Name',
+            student_id='123456789'
+        )
+        self.client.login(email='testuser@example.com', password='Testpass123!')
+
+    @patch('advisingwebsiteapp.views.update_user_degrees')
+    def test_update_profile_success(self, mock_update_user_degrees):
+        update_data = {
+            'first_name': 'NewFirst',
+            'last_name': 'NewLast',
+            'email': 'newemail@example.com',
+            'major': 'Computer Science',
+            'major_number': 'CS123'
+        }
+
+        response = self.client.post(reverse('update_profile'), data=update_data)
+
+        # Refresh from DB
+        self.user.refresh_from_db()
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('profile'))
+
+        self.assertEqual(self.user.first_name, 'NewFirst')
+        self.assertEqual(self.user.last_name, 'NewLast')
+        self.assertEqual(self.user.email, 'newemail@example.com')
+
+        # Check if helper function was called
+        mock_update_user_degrees.assert_called_once()
+
+    def test_update_profile_get_renders_profile_template(self):
+        response = self.client.get(reverse('update_profile'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'profile.html')
+
+class UpdateUserDegreesViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            email='student@example.com',
+            password='StrongPass123!',
+            first_name='Test',
+            last_name='User',
+            student_id='123456789'
+        )
+        self.client.login(email='student@example.com', password='StrongPass123!')
+
+        self.degree1 = Degree.objects.create(
+            degree_name='Computer Science',
+            degree_number='CS101',
+            degree_type=1
+        )
+        self.degree2 = Degree.objects.create(
+            degree_name='Data Science',
+            degree_number='DS201',
+            degree_type=1
+        )
+        # Initially assign degree1
+        self.user_degree = UserDegree.objects.create(
+            user_student_id=self.user,
+            degree=self.degree1
+        )
+
+    def test_update_user_degrees_removes_and_adds(self):
+        response = self.client.post(reverse('update_user_degrees'), {
+            'current_degree': self.degree1.degree_number,
+            'degree': self.degree2.id
+        })
+
+        self.assertRedirects(response, reverse('profile'))
+
+        # Confirm degree1 was removed
+        self.assertFalse(UserDegree.objects.filter(user_student_id=self.user, degree=self.degree1).exists())
+
+        # Confirm degree2 was added
+        self.assertTrue(UserDegree.objects.filter(user_student_id=self.user, degree=self.degree2).exists())
+
+    def test_update_user_degrees_only_adds_if_no_duplicate(self):
+        # Try adding degree1 again (already exists)
+        response = self.client.post(reverse('update_user_degrees'), {
+            'degree': self.degree1.id
+        })
+
+        # Should not duplicate
+        user_degrees = UserDegree.objects.filter(user_student_id=self.user, degree=self.degree1)
+        self.assertEqual(user_degrees.count(), 1)
+
+class ChangePasswordViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            email='testuser@example.com',
+            password='OldPassword123!',
+            first_name='Test',
+            last_name='User',
+            student_id='987654321'
+        )
+        self.client.login(email='testuser@example.com', password='OldPassword123!')
+
+    def test_change_password_successfully(self):
+        response = self.client.post(reverse('change_password'), {
+            'old_password': 'OldPassword123!',
+            'new_password1': 'NewPassword456!',
+            'new_password2': 'NewPassword456!'
+        })
+
+        self.assertRedirects(response, reverse('profile'))
+
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewPassword456!'))
+
+    def test_change_password_wrong_old_password(self):
+        response = self.client.post(reverse('change_password'), {
+            'old_password': 'WrongOldPass!',
+            'new_password1': 'NewPassword456!',
+            'new_password2': 'NewPassword456!'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Your old password is incorrect.')
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('OldPassword123!'))
+
+    def test_change_password_mismatch(self):
+        response = self.client.post(reverse('change_password'), {
+            'old_password': 'OldPassword123!',
+            'new_password1': 'NewPassword456!',
+            'new_password2': 'Mismatch789!'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Unable to update password. Try again!')
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('OldPassword123!'))
+
+class ChatHomeViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            email='student@example.com',
+            password='TestPass123!',
+            first_name='Stu',
+            last_name='Dent',
+            is_student=True,
+            student_id='123456789'
+        )
+
+        self.advisor = User.objects.create_user(
+            email='advisor@example.com',
+            password='TestPass123!',
+            first_name='Ad',
+            last_name='Visor',
+            is_advisor=True,
+            student_id='987654321'
+        )
+
+        self.chat = Chat.objects.create(chat_name='Stu Dent, Ad Visor')
+        self.chat_member_student = ChatMember.objects.create(user=self.student, chat=self.chat, chat_deleted=False)
+        self.chat_member_advisor = ChatMember.objects.create(user=self.advisor, chat=self.chat, chat_deleted=False)
+
+        # Simulate a message
+        self.last_message = Message.objects.create(
+            chat=self.chat,
+            sender=self.advisor,
+            message_content='Hello!',
+            date_sent=timezone.now()
+        )
+
+        self.chat_member_student.chat_last_viewed = self.last_message.date_sent - timezone.timedelta(minutes=5)
+        self.chat_member_student.save()
+
+        self.client.login(email='student@example.com', password='TestPass123!')
+
+    def test_chathome_view_renders_for_logged_in_user(self):
+        response = self.client.get(reverse('chathome'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'chat/room_base.html')
+        self.assertContains(response, 'Hello!')  # last message
+        self.assertIn('chats', response.context)
+        self.assertTrue(any(chat['last_message'] == 'Hello!' for chat in response.context['chats']))
+        self.assertIn('users', response.context)
+        self.assertTrue(any(user.email == 'advisor@example.com' for user in response.context['users']))
+
+    def test_chathome_no_new_messages(self):
+        # Simulate last viewed after message sent
+        self.chat_member_student.chat_last_viewed = self.last_message.date_sent + timezone.timedelta(minutes=1)
+        self.chat_member_student.save()
+
+        response = self.client.get(reverse('chathome'))
+        chats = response.context['chats']
+        self.assertFalse(any(chat['new_message'] for chat in chats))  # No new messages
+
+class ChatRoomViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        self.student = User.objects.create_user(
+            email='student@example.com',
+            password='TestPass123!',
+            first_name='Stu',
+            last_name='Dent',
+            is_student=True,
+            student_id='123456789'
+        )
+
+        self.advisor = User.objects.create_user(
+            email='advisor@example.com',
+            password='TestPass123!',
+            first_name='Ad',
+            last_name='Visor',
+            is_advisor=True,
+            student_id='987654321'
+        )
+
+        self.chat = Chat.objects.create(chat_name='Stu Dent, Ad Visor')
+        self.chat_member_student = ChatMember.objects.create(user=self.student, chat=self.chat, chat_deleted=False)
+        self.chat_member_advisor = ChatMember.objects.create(user=self.advisor, chat=self.chat, chat_deleted=False)
+
+        # Add message
+        self.message = Message.objects.create(
+            chat=self.chat,
+            sender=self.advisor,
+            message_content='Hey!',
+            date_sent=timezone.now()
+        )
+
+    def test_room_view_as_member(self):
+        self.client.login(email='student@example.com', password='TestPass123!')
+        response = self.client.get(reverse('room', args=[self.chat.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'chat/room.html')
+        self.assertIn('chats', response.context)
+        self.assertIn('email', response.context)
+        self.assertContains(response, 'Hey!')
+
+        # Confirm chat_last_viewed is updated
+        self.chat_member_student.refresh_from_db()
+        self.assertTrue(
+            (timezone.now() - self.chat_member_student.chat_last_viewed).total_seconds() < 10
+        )
+
+    def test_room_view_nonexistent_chat(self):
+        self.client.login(email='student@example.com', password='TestPass123!')
+        response = self.client.get(reverse('room', args=[999]))  # Chat ID that doesn't exist
+        self.assertRedirects(
+            response,
+            f"{reverse('error_page')}?exception=ERROR 404: Chat does not exist or could not be found."
+        )
+
+    def test_room_view_user_not_member(self):
+        outsider = User.objects.create_user(
+            email='outsider@example.com',
+            password='TestPass123!',
+            first_name='Out',
+            last_name='Sider'
+        )
+        self.client.login(email='outsider@example.com', password='TestPass123!')
+        response = self.client.get(reverse('room', args=[self.chat.id]))
+
+        self.assertRedirects(
+            response,
+            f"{reverse('error_page')}?exception=ERROR 500: User is not a member of this chat."
+        )
+
+class CheckChatMembershipViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        # Creating users
+        self.student = User.objects.create_user(
+            email='student@example.com',
+            password='TestPass123!',
+            first_name='Stu',
+            last_name='Dent',
+            is_student=True,
+            student_id='123456789'
+        )
+
+        self.advisor = User.objects.create_user(
+            email='advisor@example.com',
+            password='TestPass123!',
+            first_name='Ad',
+            last_name='Visor',
+            is_advisor=True,
+            student_id='987654321'
+        )
+
+        # Creating chat and adding the student to it
+        self.chat = Chat.objects.create(chat_name='Study Group')
+        self.chat_member_student = ChatMember.objects.create(user=self.student, chat=self.chat, chat_deleted=False)
+
+    def test_check_chat_membership_member(self):
+        # Logging in as the student (who is a member)
+        self.client.login(email='student@example.com', password='TestPass123!')
+
+        # Sending a GET request to check membership
+        response = self.client.get(reverse('check_chat_membership', args=[self.chat.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {'is_member': True})
+
+    def test_check_chat_membership_non_member(self):
+        # Logging in as the advisor (who is NOT a member)
+        self.client.login(email='advisor@example.com', password='TestPass123!')
+
+        # Sending a GET request to check membership
+        response = self.client.get(reverse('check_chat_membership', args=[self.chat.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {'is_member': False})
+
+class ErrorPageViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_error_page_with_exception(self):
+        # Simulating an error by passing an exception message in the query string
+        exception_message = "ERROR 404: Page Not Found"
+        
+        # Sending a GET request with the exception message
+        response = self.client.get(reverse('error_page') + f'?exception={exception_message}')
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, exception_message)
+        self.assertTemplateUsed(response, 'error.html')
+
+    def test_error_page_without_exception(self):
+        # Sending a GET request without an exception message
+        response = self.client.get(reverse('error_page'))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'An unknown error occurred.')
+        self.assertTemplateUsed(response, 'error.html')

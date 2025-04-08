@@ -167,6 +167,7 @@ def download_recommendations(request):
 
     return response
 
+#@login_required
 def profile(request):
     user = request.user
     user_degrees = UserDegree.objects.filter(user_student_id=user).select_related('degree')
