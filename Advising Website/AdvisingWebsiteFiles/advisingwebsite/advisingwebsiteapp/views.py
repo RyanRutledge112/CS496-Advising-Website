@@ -10,6 +10,8 @@ from .models import Chat, ChatMember, Message
 from django.contrib.auth.forms import PasswordChangeForm
 from django.utils.safestring import mark_safe
 from django.db import connection
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 from advisingwebsiteapp.models import User, Degree, UserDegree
 from .scraptranscript import parse_transcript, store_user_degree
@@ -167,7 +169,7 @@ def download_recommendations(request):
 
     return response
 
-#@login_required
+@login_required
 def profile(request):
     user = request.user
     user_degrees = UserDegree.objects.filter(user_student_id=user).select_related('degree')
@@ -236,6 +238,19 @@ def update_profile(request):
         certificate = request.POST.get('certificate', '')
         certificate_number = request.POST.get('certificate_number', '')
 
+         # Validate email format
+        if email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                django_messages.error(request, "Enter a valid email address.")
+                return redirect('profile')
+            
+        # Check if email already exists
+        if User.objects.filter(email=email).exists():
+            django_messages.error(request, "This email is already registered.")
+            return redirect('profile')
+
         #update only the fields that have been filled in
         if first_name:
             request.user.first_name = first_name
@@ -268,6 +283,11 @@ def update_user_degrees(request):
             degree_to_remove = Degree.objects.filter(degree_number=current_degree_number).first()
             if degree_to_remove:
                 UserDegree.objects.filter(user_student_id=user, degree=degree_to_remove).delete()
+
+        # Don't remove a degree if no degree is selected
+        if not current_degree_number and not new_degree_id:
+            # No degree is selected, so no changes to degrees
+            return redirect('profile')
 
         # Add the selected new degree if it exists and isn't already in UserDegree
         if new_degree_id:

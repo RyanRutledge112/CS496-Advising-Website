@@ -219,7 +219,7 @@ body.profile main.container-fluid {
     border-radius: 3px;
     background-color: #B01E24;
     border: #B01E24;
-    margin-top: 10%;
+    margin-top: 2%;
 }
 
 .profile-container button:hover{
@@ -303,3 +303,23 @@ footer.image-credit a:hover {
     width: 100%; 
     font-family: Bebas Neue;
 }
+
+.select2-wrapper .select2-container {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+  
+  .select2-selection {
+    position: relative;
+    height: auto;
+    min-height: 38px;
+    padding-right: 2.25rem; 
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__clear {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+  }

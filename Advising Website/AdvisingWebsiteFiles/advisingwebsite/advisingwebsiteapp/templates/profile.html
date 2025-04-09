@@ -10,7 +10,7 @@
       </ul>
   {% endif %}
   <div class="alert alert-info" >
-    To avoid deleting your current degree info, leave the dropdown as is.
+    To avoid deleting your current degree info, leave the current degree dropdown as is.
   </div>
   <form method="POST" action="{% url 'update_profile' %}">
       {% csrf_token %}
@@ -46,9 +46,11 @@
         </select>
       </div>
 
+  <div class="selection">
     <label for="degreeSelect">Select New Degree:</label>
     <div class="select2-wrapper">
       <select id="degreeSelect" name="degree">
+        <option value="" selected disabled hidden>Select degree</option>
         {% for category, degrees in grouped_degrees.items %}
           <optgroup label="{{ category }}">
             {% for degree in degrees %}
@@ -61,6 +63,7 @@
         {% endfor %}
       </select>
     </div>
+  </div>
 
       <!-- Submit Button -->
       <button type="submit" class="btn btn-primary">Update</button>
@@ -78,7 +81,7 @@
     });
 
     $('#degreeSelect').select2({
-      placeholder: "Select degrees",
+      placeholder: "Select degree",
       allowClear: true,
       width: '100%'
     });
