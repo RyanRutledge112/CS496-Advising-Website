@@ -273,19 +273,19 @@ def update_user_degrees(request):
         user = request.user  # Get logged-in user
 
         # Get the selected current degree (for removal)
-        current_degree_number = request.POST.get('current_degree')  
+        current_degree_id = request.POST.get('current_degree')  
 
         # Get the selected new degree (for addition)
         new_degree_id = request.POST.get('degree')  
 
         # Remove the selected current degree
-        if current_degree_number:
-            degree_to_remove = Degree.objects.filter(degree_number=current_degree_number).first()
+        if current_degree_id:
+            degree_to_remove = Degree.objects.filter(id=current_degree_id).first()
             if degree_to_remove:
                 UserDegree.objects.filter(user_student_id=user, degree=degree_to_remove).delete()
 
         # Don't remove a degree if no degree is selected
-        if not current_degree_number and not new_degree_id:
+        if not current_degree_id and not new_degree_id:
             # No degree is selected, so no changes to degrees
             return redirect('profile')
 

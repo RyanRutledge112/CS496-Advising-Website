@@ -39,7 +39,7 @@
         <select id="current_degree" name="current_degree" class="form-select">
             <option value="" selected>-- Select Your Current Degree --</option>
             {% for user_degree in user_degrees %}
-                <option value="{{ user_degree.degree.degree_number }}">
+                <option value="{{ user_degree.degree.id }}">
                     {{ user_degree.degree.degree_name }} ({{ user_degree.degree.degree_number }}) - Concentration: {{ user_degree.degree.concentration }}
                 </option>
             {% endfor %}
