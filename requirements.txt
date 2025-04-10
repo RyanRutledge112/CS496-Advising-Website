@@ -127,6 +127,6 @@ wsproto==1.2.0
 yarl==1.18.3
 zope.interface==7.2
 undetected_chromedriver==3.5.5
-pytest
+pytest==8.3.3
 pytest-django
 pytest-asynchio
