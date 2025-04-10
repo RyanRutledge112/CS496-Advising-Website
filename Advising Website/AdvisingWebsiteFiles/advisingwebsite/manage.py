@@ -20,11 +20,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    """
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'advisingwebsite.settings')
-
-    # Manually specify the test directory here if necessary
-    from django.core.management import execute_from_command_line
-    execute_from_command_line(['manage.py', 'test', 'advisingwebsiteapp.tests'])
-    """
-    #This is for testing purposes, you'll need to comment out this code above and comment the main()
