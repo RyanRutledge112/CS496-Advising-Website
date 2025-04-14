@@ -29,8 +29,16 @@ def login_view(request):
     if request.method == "POST":
         email = request.POST.get('email')
         password = request.POST.get('password')
-        user = authenticate(request, email=email, password=password)
 
+        # Check if required fields are filled
+        if not email or not password:
+            if not email:
+                django_messages.error(request, "Email is required.")
+            if not password:
+                django_messages.error(request, "Password is required.")
+            return redirect('login')
+
+        user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)  # Log in
             return redirect('home')  # Redirect to homepage
@@ -51,13 +59,31 @@ def register(request):
         is_student = True  # Default to True (most users are students)
         is_advisor = False  # Default to False (most users are not advisors)
 
+        # Ensure all required fields are present
+        required_fields = ['first_name', 'last_name', 'email', 'password', 'student_id']
+        for field in required_fields:
+            if not request.POST.get(field):
+                django_messages.error(request, f"{field.replace('_', ' ').capitalize()} is required.")
+                return redirect('register')
+
+        # Validate student_id format (exactly 9 digits)
+        student_id = request.POST.get('student_id')
+        if not re.fullmatch(r'\d{9}', student_id):
+            django_messages.error(request, "Student ID must be exactly 9 digits.")
+            return redirect('register')
+
         # Password validation
         password_regex = re.compile(r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{9,}$')
         if not password_regex.match(password):
-            django_messages.error(request, "Password must be at least 9 characters long, include an uppercase letter, "
-            "a number, and a special character.")
+            django_messages.error(request, "Password must be at least 9 characters long, include an uppercase letter, a number, and a special character.")
             return redirect('register')
 
+        # Validate email format
+        email = request.POST.get('email')
+        if not re.fullmatch(r"[^@]+@[^@]+\.[^@]+", email):
+            django_messages.error(request, "Invalid email format.")
+            return redirect('register')
+        
         # Check if email already exists
         if User.objects.filter(email=email).exists():
             django_messages.error(request, "This email is already registered.")
@@ -66,6 +92,12 @@ def register(request):
         #check if student_id already exists
         if User.objects.filter(student_id=student_id).exists():
             django_messages.error(request, "This student id is already registered.")
+            return redirect('register')
+        
+        # Enforce no more than 6 degrees
+        selected_degrees = request.POST.getlist('degrees[]')
+        if len(selected_degrees) > 6:
+            django_messages.error(request, "You can select up to 6 degrees.")
             return redirect('register')
 
         # Create a new user
