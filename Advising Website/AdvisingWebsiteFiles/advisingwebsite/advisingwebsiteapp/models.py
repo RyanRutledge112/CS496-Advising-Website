@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import UserManager, AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
 from datetime import date, datetime
+import uuid
 
 # Create your models here. Autoincremented id functions are created for every class, so there is no need to
 # explicitly write any code that makes a primary key with an autoincrementing id.
@@ -147,6 +148,7 @@ class DegreeCourse(models.Model):
 class Prerequisites(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="prerequisites")
     prerequisite = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="required_for")
+    group_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.prerequisite.course_name} is a prerequisite for {self.course.course_name}"
