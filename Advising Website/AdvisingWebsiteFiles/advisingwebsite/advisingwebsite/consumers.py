@@ -230,7 +230,7 @@ class ChatConsumer(WebsocketConsumer):
         )
         self.accept()
     
-    def is_member(self, user, chat_id):
+    async def is_member(self, user, chat_id):
         chat = Chat.objects.filter(id=chat_id).first()
         return ChatMember.objects.filter(chat=chat, user=user).aexists()
 

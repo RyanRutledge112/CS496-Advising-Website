@@ -1,0 +1,13 @@
+ifeq ($(OS),Windows_NT)
+    TEST_COMMAND = python run_tests.py
+else
+    TEST_COMMAND = make test_django && npm test -- --maxWorkers=2
+endif
+
+SHELL := /bin/bash
+
+test: test_django
+	$(TEST_COMMAND)
+
+test_django:
+	pytest --maxfail=1 --disable-warnings -q
