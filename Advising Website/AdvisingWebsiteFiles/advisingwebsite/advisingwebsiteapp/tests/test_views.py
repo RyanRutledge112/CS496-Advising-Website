@@ -452,7 +452,7 @@ class UpdateUserDegreesViewTest(TestCase):
 
     def test_update_user_degrees_removes_and_adds(self):
         response = self.client.post(reverse('update_profile'), {
-            'current_degree': self.degree1.degree_number,
+            'current_degree': self.degree1.id,
             'degree': self.degree2.id
         })
 
