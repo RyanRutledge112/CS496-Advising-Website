@@ -182,6 +182,9 @@ def upload_transcript(request):
     return render(request, 'uploadTranscript.html')
 
 def process_and_recommend_courses(user, file_path, selected_term, max_hours):
+    if not user.student_id:
+        raise AttributeError("Student ID not found in user profile.")
+    
     processed_data = parse_transcript(file_path)
     store_user_degree(processed_data)
 
