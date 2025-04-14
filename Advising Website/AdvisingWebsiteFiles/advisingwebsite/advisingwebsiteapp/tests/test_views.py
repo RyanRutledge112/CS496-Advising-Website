@@ -193,6 +193,9 @@ class UploadTranscriptViewTest(TestCase):
                 MagicMock(course_name="CS 101", hours=3),
                 MagicMock(course_name="MATH 123", hours=3)
             ],
+            "credit_hours": 6,
+            "recommendation_reasons": [],
+            "notice": ""
         }
         mock_process.return_value = mock_results
 
@@ -208,7 +211,7 @@ class UploadTranscriptViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "recommendedClasses.html")
         self.assertIn("recommendations", response.context)
-        self.assertIn("CS 101", [rec.course_name for rec in response.context["recommendations"]])
+        self.assertIn("CS 101", [rec["course_name"] for rec in response.context["recommendations"]])
         self.assertIn("recommendations", self.client.session)
 
     @patch("advisingwebsiteapp.views.process_and_recommend_courses", side_effect=AttributeError)
@@ -260,11 +263,20 @@ class ProcessAndRecommendCoursesTest(TestCase):
     def test_process_and_recommend_courses(self, mock_parse, mock_store, mock_recommend, mock_requirements):
         # Setup mock returns
         mock_parse.return_value = {"courses": ["CS 101", "MATH 123"]}
-        mock_requirements.return_value = {"required": ["CS 200", "MATH 200"]}
-        mock_recommend.return_value = [
-            MagicMock(course_name="CS 200", hours=3),
-            MagicMock(course_name="MATH 200", hours=3)
-        ]
+        mock_requirements.return_value = {
+            "courses": [],
+            "instructions": [],
+            "instructional_rules": []
+        }
+        mock_recommend.return_value = {
+            "recommendations": [
+                MagicMock(course_name="CS 200", hours=3),
+                MagicMock(course_name="MATH 200", hours=3)
+            ],
+            "credit_hours": 6,
+            "recommendation_reasons": [],
+            "notice": ""
+        }
 
         result = process_and_recommend_courses(
             self.user,
@@ -280,9 +292,11 @@ class ProcessAndRecommendCoursesTest(TestCase):
             self.user,
             mock_parse.return_value,
             selected_term=self.selected_term,
-            max_hours=self.max_hours
+            max_hours=self.max_hours,
+            instructional_rules=[]
         )
-        mock_requirements.assert_called_once_with(self.user.student_id)
+        self.assertEqual(mock_requirements.call_count, 2)
+        mock_requirements.assert_any_call(self.user.student_id)
 
         self.assertIn("transcript_data", result)
         self.assertIn("major_requirements", result)
@@ -290,8 +304,7 @@ class ProcessAndRecommendCoursesTest(TestCase):
 
         self.assertEqual(result["transcript_data"], mock_parse.return_value)
         self.assertEqual(result["major_requirements"], mock_requirements.return_value)
-        self.assertEqual(result["recommendations"], mock_recommend.return_value)
-
+        self.assertEqual(result["recommendations"], mock_recommend.return_value["recommendations"])
 class DownloadRecommendationsTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
