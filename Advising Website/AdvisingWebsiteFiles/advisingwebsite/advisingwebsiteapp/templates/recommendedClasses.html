@@ -3,31 +3,53 @@
 {% block content %}
 <!DOCTYPE html>
 <html lang="en">
-
 <body>
     <div>
         <div>
-            <div>
-                <h2>Recommended Courses for {{ selected_term|title }}</h2>
-                <h5>Total Credit Hours: {{ credit_hours }}</h5>
+            <h2>Recommended Courses for {{ selected_term|title }}</h2>
+            <h5>Total Credit Hours: {{ credit_hours }}</h5>
+            {% if notice %}
+            <div style="margin-bottom: 1em; padding: 10px; background-color: #f9f3d2; border-left: 5px solid #c8aa00;">
+                <strong>Note:</strong> {{ notice }}
             </div>
+            {% endif %}
 
-            <div>
-                <ul>
-                    {% for course in recommendations %}
-                    <li>
-                        <strong>{{ course.course_name }}</strong>
-                        {{ course.hours }} hrs
-                    </li>
-                    {% empty %}
+            <ul>
+                {% for course in recommendations %}
+                    {% if course.0 %}
+                        <li>
+                            <strong>Choose one of:</strong>
+                            <ul>
+                                {% for option in course %}
+                                    {% for item in recommendation_reasons %}
+                                        {% if item.course.course_name == option.course_name %}
+                                            <li>
+                                                {{ option.course_name }} ({{ option.hours }} hrs) —
+                                                <em>{{ item.reason }}</em>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% else %}
+                        {% for item in recommendation_reasons %}
+                            {% if item.course.course_name == course.course_name %}
+                                <li>
+                                    <strong>{{ course.course_name }}</strong> ({{ course.hours }} hrs) —
+                                    <em>{{ item.reason }}</em>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% empty %}
                     <li>No recommendations available.</li>
-                    {% endfor %}
-                </ul>
-            </div>
+                {% endfor %}
+            </ul>
 
-            <div>
+            <div style="margin-top: 1em;">
                 <form action="{% url 'download_recommendations' %}" method="get">
-                    <button type="submit">
+                    <button type="submit" class="btn btn-primary">
                         Download Recommendations
                     </button>
                 </form>
@@ -35,6 +57,5 @@
         </div>
     </div>
 </body>
-
 </html>
 {% endblock %}
