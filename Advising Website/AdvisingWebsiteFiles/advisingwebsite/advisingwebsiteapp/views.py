@@ -13,7 +13,7 @@ from django.db import connection
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 
-from advisingwebsiteapp.models import User, Degree, UserDegree
+from advisingwebsiteapp.models import User, Degree, UserDegree, DegreeCourse
 from .scraptranscript import parse_transcript, store_user_degree
 from .majorreqs import main as extract_major_requirements
 from .majorreqs import get_user_major
@@ -130,7 +130,8 @@ def register(request):
 def upload_transcript(request):
     if request.method == "POST" and request.FILES.get("pdfFile"):
         uploaded_file = request.FILES["pdfFile"]
-        credit_hours = int(request.POST.get("inputCreditHours", "15"))
+        credit_hours_raw = request.POST.get("inputCreditHours", "").strip()
+        credit_hours = int(credit_hours_raw) if credit_hours_raw.isdigit() else 15
         selected_term = request.POST.get("term", "").lower()
         file_path = f"uploads/{uploaded_file.name}"
 
@@ -151,18 +152,31 @@ def upload_transcript(request):
             return render(request, "uploadTranscript.html", {
                 "error": "Student ID not found in user profile."
             })
-        
+
+        # Safely format recommendations
+        def format_rec(c):
+            if isinstance(c, list):
+                return [
+                    {'course_name': x.course_name, 'hours': x.hours}
+                    for x in c if hasattr(x, 'course_name')
+                ]
+            elif hasattr(c, 'course_name'):
+                return {'course_name': c.course_name, 'hours': c.hours}
+            return None  
+
+        formatted_recs = list(filter(None, [format_rec(c) for c in results["recommendations"]]))
+
         # store recommendations in session for later download
-        request.session['recommendations'] = [
-            {'course_name': c.course_name, 'hours': c.hours} for c in results["recommendations"]
-        ]
+        request.session['recommendations'] = formatted_recs
 
         return render(request, "recommendedClasses.html", {
             "transcript_data": results["transcript_data"],
             "major_requirements": results["major_requirements"],
-            "recommendations": results["recommendations"],
-            "credit_hours": credit_hours,
-            "selected_term": selected_term
+            "recommendations": formatted_recs,
+            "credit_hours": results["credit_hours"],
+            "selected_term": selected_term,
+            "recommendation_reasons": results["recommendation_reasons"],
+            "notice": results["notice"]
         })
 
     return render(request, 'uploadTranscript.html')
@@ -171,19 +185,34 @@ def process_and_recommend_courses(user, file_path, selected_term, max_hours):
     processed_data = parse_transcript(file_path)
     store_user_degree(processed_data)
 
-    recommendations = recommend_schedule(
-        user,
-        processed_data,
-        selected_term=selected_term,
-        max_hours=max_hours
-    )
-
     major_requirements = extract_major_requirements(user.student_id)
+
+    major_req_data = extract_major_requirements(user.student_id)
+    major_courses = major_req_data["courses"]
+    instructional_entries = major_req_data["instructions"]
+    instructional_rules = major_req_data.get("instructional_rules", [])  
+
+    try:
+        result = recommend_schedule(
+            user,
+            processed_data,
+            selected_term=selected_term,
+            max_hours=max_hours,
+            instructional_rules=instructional_rules
+        )
+    except Exception as e:
+        import traceback
+        print("ERROR:", str(e))
+        traceback.print_exc()
+        raise
 
     return {
         "transcript_data": processed_data,
         "major_requirements": major_requirements,
-        "recommendations": recommendations
+        "recommendations": result["recommendations"],
+        "credit_hours": result["credit_hours"],
+        "recommendation_reasons": result["recommendation_reasons"],
+        "notice": result["notice"]
     }
 
 def download_recommendations(request):
