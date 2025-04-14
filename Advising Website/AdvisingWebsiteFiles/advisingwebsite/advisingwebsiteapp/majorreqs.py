@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from advisingwebsiteapp.models import User, UserDegree, Course, DegreeCourse, Degree, Prerequisites
+from advisingwebsiteapp.recommender import parse_instruction_to_course_rule
 
 BASE_URL = "https://catalog.wku.edu"
 BASE_CATALOG_URL = f"{BASE_URL}/undergraduate/programs/"
@@ -129,6 +130,7 @@ def get_or_create_course(course_name, hours=0, colonade=False, colonade_id=None,
     normalized_code = extract_course_code(course_name)
 
     course = next((c for c in Course.objects.all() if extract_course_code(c.course_name) == normalized_code), None)
+    colonade = False if colonade is None else colonade
 
     if course:
         updated = False
@@ -152,11 +154,18 @@ def get_or_create_course(course_name, hours=0, colonade=False, colonade_id=None,
         return course, True
 
 def get_or_create_degree_course(course_obj, degree_obj, is_required=False, is_elective=False, group_id=None):
-    return DegreeCourse.objects.get_or_create(
+    obj, created = DegreeCourse.objects.get_or_create(
         course=course_obj,
         degree=degree_obj,
         defaults={"is_required": is_required, "is_elective": is_elective, "group_id": group_id}
     )
+    
+    if created:
+        print(f"Created DegreeCourse for {course_obj.course_name} under {degree_obj.degree_name}")
+    else:
+        print(f"DegreeCourse already exists for {course_obj.course_name} under {degree_obj.degree_name}")
+    
+    return obj
 
 def deduplicate_courses():
     courses_by_code = defaultdict(list)
@@ -184,47 +193,58 @@ class CourseExtractor:
     def parse(self, concentration=None):
         elements = self._get_starting_point(concentration)
 
-        for elem in elements:
-            text = elem.get_text(strip=True).lower()
-            if elem.name in ["h2", "h3", "tr"] and "required" in text:
-                self._update_flags_from_header(text)
+        try:
+            for elem in elements:
+                if self.should_stop:
+                    continue
 
-        for elem in elements:
-            if self.should_stop or (elem.name == "h3" and "faculty" in elem.get_text(strip=True).lower()):
-                break
+                if elem.name == "h3" and "faculty" in elem.get_text(strip=True).lower():
+                    continue
 
-            heading = elem.get_text(strip=True).lower()
-            if elem.name == "h3" and any(x in heading for x in ["forensic psychology", "sport psychology"]):
-                self.should_stop = True
-                break
+                heading = elem.get_text(strip=True).lower()
+                if elem.name == "h3" and any(x in heading for x in ["forensic psychology", "sport psychology"]):
+                    self.should_stop = True
+                    break
 
-            if elem.name == "tr" and "areaheader" in elem.get("class", []):
-                self._reset_grouping()
-                self._update_flags_from_header(heading)
-                continue
+                if elem.name == "tr" and "areaheader" in elem.get("class", []):
+                    self._reset_grouping()
+                    self._update_flags_from_header(heading)
+                    continue
 
-            if elem.name == "tr" and elem.find("span", class_="courselistcomment"):
-                self._reset_grouping()
-                self._start_new_group(elem.get_text(strip=True))
-                continue
+                if elem.name == "tr" and elem.find("span", class_="courselistcomment"):
+                    self._reset_grouping()
+                    self._start_new_group(elem.get_text(strip=True))
+                    continue
 
-            if elem.name == "table" and "sc_courselist" in elem.get("class", []):
-                self._extract_table_courses(elem)
+                if elem.name == "table" and "sc_courselist" in elem.get("class", []):
+                    self._extract_table_courses(elem)
 
-        return self.extracted_courses
+            return list(self.extracted_courses)
 
-    def _get_starting_point(self, concentration):
+        except Exception as e:
+            print(f"Exception: {e}")
+
+    def _get_starting_point(self, concentration=None):
         if concentration:
-            headings = [f"{concentration.lower()} {x}" for x in ["concentration", "option", "track"]]
+            # Normalize the concentration for matching
+            norm_conc = re.sub(r"\s*\(.*?\)", "", concentration).strip().lower()
             for h3 in self.section.find_all("h3"):
-                if any(h in h3.get_text(strip=True).lower() for h in headings):
+                h3_text = h3.get_text(strip=True).lower()
+
+                # Try matching cleaned version
+                if norm_conc == h3_text or norm_conc in h3_text:
                     return h3.find_all_next()
+
             return []
-        else:
-            for elem in self.section.find_all():
-                if elem.name == "h2" and "program requirements" in elem.get_text(strip=True).lower():
+
+        # No concentration: look for Program/Admission Requirements
+        for elem in self.section.find_all():
+            if elem.name == "h2":
+                header = elem.get_text(strip=True).lower()
+                if "program requirements" in header or "admission requirements" in header:
                     return elem.find_all_next()
-            return self.section.find_all()
+
+        return self.section.find_all()
 
     def _reset_grouping(self):
         self.group_mode = False
@@ -257,14 +277,30 @@ class CourseExtractor:
         if not isinstance(table, Tag):
             return
 
-        for row in table.find_all("tr", class_=lambda c: c in ["even", "odd", "orclass"]):
-            if row.find("span", class_="courselistcomment areaheader"):
-                self._update_flags_from_header(row.get_text(strip=True))
+        stop_heading = "MEPN Second Degree Undergraduate Coursework"
+
+        for row in table.find_all("tr"):
+            header_span = row.find("span", class_="courselistcomment areaheader")
+            if header_span:
+                header_text = header_span.get_text(strip=True)
+                if header_text == stop_heading:
+                    break
+                self._update_flags_from_header(header_text)
                 continue
 
             if row.find("span", class_="courselistcomment"):
                 self._reset_grouping()
                 self._start_new_group(row.get_text(strip=True))
+                instruction_text = clean_text(row.get_text(strip=True))
+                instruction_data = {
+                    "type": "instruction",
+                    "text": instruction_text,
+                    "group_id": self.current_group_id,
+                    "hours": getattr(self, "shared_hours", None),
+                    "is_required": self.current_required,
+                    "is_elective": self.current_elective
+                }
+                self.extracted_courses.append(instruction_data)
                 continue
 
             cols = row.find_all("td")
@@ -272,15 +308,23 @@ class CourseExtractor:
                 continue
 
             course_number_raw = clean_text(cols[0].get_text())
+            course_number_raw = re.sub(r"^\s*or\s+", "", course_number_raw, flags=re.IGNORECASE)  
             course_name_raw = clean_text(cols[1].get_text())
             credit_hours = clean_text(cols[2].get_text()) if len(cols) > 2 else ""
             course_href = cols[0].find("a", href=True)["href"] if cols[0].find("a", href=True) else None
 
             course_numbers = [normalize_code(c) for c in re.split(r"&|,", course_number_raw)]
-            course_names = [c.strip() for c in re.split(r" and | & ", course_name_raw)]
+            
+            split_names = [s.strip() for s in cols[1].stripped_strings if s.strip()]
+            split_names = [n for n in split_names if not n.lower().startswith(('and', '&'))] 
+
+            if len(split_names) == len(course_numbers):
+                course_names = split_names
+            else:
+                course_names = [course_name_raw] * len(course_numbers)
 
             if len(course_numbers) != len(course_names):
-                course_names = [course_name_raw] * len(course_numbers)
+                print(f"DEBUG: Mismatched course_numbers ({course_numbers}) and course_names ({course_names})")
 
             for i in range(len(course_numbers)):
                 course_number = course_numbers[i]
@@ -290,7 +334,7 @@ class CourseExtractor:
                 if not is_valid_course(course_number, full_course_name):
                     continue
 
-                if not credit_hours or credit_hours.lower() == "n/a":
+                if not credit_hours or str(credit_hours).lower() == "n/a":
                     info = fetch_course_info(full_course_name)
                     credit_hours = info["hours"] if info else "N/A"
                     colonade = info.get("colonade", False)
@@ -452,15 +496,12 @@ def extract_courses_from_html(major_name, concentration=None):
     if not section:
         return None
 
-    return CourseExtractor(section).parse(concentration)
+    extractor = CourseExtractor(section)
+    parsed = extractor.parse(concentration)
 
-def insert_courses_into_db(catalog_courses, extracted_courses, major_name):
-    try:
-        degree = Degree.objects.get(degree_name__icontains=major_name)
-    except Degree.DoesNotExist:
-        print(f"Degree '{major_name}' not found.")
-        return
+    return extractor.extracted_courses, parsed
 
+def insert_courses_into_db(catalog_courses, extracted_courses, degree):
     # Save all catalog_courses to Course table
     for course in catalog_courses:
         course_info = fetch_course_info(course.get("title")) or course
@@ -524,7 +565,10 @@ def link_course_prerequisites(catalog_courses):
         except Course.DoesNotExist:
             continue
 
-        for group in parse_prerequisite_logic(prereq_text):
+        parsed_groups = parse_prerequisite_logic(prereq_text)
+
+        for group in parsed_groups:
+            group_id = str(uuid.uuid4())  
             for prereq_code in group:
                 prereq_obj = Course.objects.filter(course_name__startswith=prereq_code).first()
                 if not prereq_obj:
@@ -540,14 +584,18 @@ def link_course_prerequisites(catalog_courses):
                             recent_terms=info.get("recent_terms")
                         )
                 if prereq_obj:
-                    Prerequisites.objects.get_or_create(course=course_obj, prerequisite=prereq_obj)
+                    Prerequisites.objects.get_or_create(
+                        course=course_obj,
+                        prerequisite=prereq_obj,
+                        defaults={"group_id": group_id}  
+                    )
 
 def is_catalog_already_parsed(degree_name):
     filename = f"{degree_name.replace(' ', '_').lower()}.html"
     return os.path.exists(os.path.join(PARSE_DIR, filename))
 
-def are_courses_already_extracted(degree_name):
-    return DegreeCourse.objects.filter(degree__degree_name=degree_name).exists()
+def are_courses_already_extracted(degree_obj):
+    return DegreeCourse.objects.filter(degree=degree_obj).exists()
 
 def main(student_id):
     try:
@@ -560,6 +608,9 @@ def main(student_id):
     hardcoded = {
         "nursing": "https://catalog.wku.edu/undergraduate/health-human-services/nursing/nursing-bsn/",
     }
+
+    all_extracted_courses = []
+    all_instructional_entries = []
 
     for ud in user_degrees:
         degree = ud.degree
@@ -575,17 +626,35 @@ def main(student_id):
             degree_url = find_catalog_url_by_degree_number(main_catalog_path, degree_number)
         if not degree_url:
             continue
-
-        if is_catalog_already_parsed(degree_name) and are_courses_already_extracted(degree_name):
+        
+        if is_catalog_already_parsed(degree_name) and are_courses_already_extracted(degree):
             continue
 
         catalog_path = fetch_and_save_course_catalog(degree_name)
         fetch_and_save_html(degree_url, degree_name)
 
         catalog_courses = extract_all_catalog_courses(read_file(catalog_path)) if catalog_path else []
-        extracted_courses = extract_courses_from_html(degree_name, concentration if degree.degree_type == 1 else None)
+        extracted_courses, instructional_entries = extract_courses_from_html(degree_name, concentration)
 
-        if extracted_courses:
-            insert_courses_into_db(catalog_courses, extracted_courses, degree_name)
+        if not are_courses_already_extracted(degree) and extracted_courses:
+            insert_courses_into_db(catalog_courses, extracted_courses, degree)
         else:
-            print(f"No courses extracted for {degree_name}")
+            print(f"Skipping course insertion for {degree_name}, already exists or empty")
+
+        all_extracted_courses.extend(extracted_courses)
+        all_instructional_entries.extend(instructional_entries)
+
+    parsed_rules = []
+    for entry in all_instructional_entries:
+        if entry.get("type") == "instruction":
+            subject_match = re.search(r"\b([A-Z]{2,4})\s*\d{3}", entry.get("text", ""))
+            subject = subject_match.group(1) if subject_match else "None"  
+            rules = parse_instruction_to_course_rule(entry.get("text", ""), subject)
+            parsed_rules.extend(rules)
+
+    return {
+        "courses": all_extracted_courses,
+        "instructions": all_instructional_entries,
+        "instructional_rules": parsed_rules
+    }
+
