@@ -28,9 +28,12 @@ $(document).ready(function() {
   });
 });
 
-var chatSocket = new ReconnectingWebSocket(
+if (typeof window !== 'undefined') {
+  var chatSocket = new ReconnectingWebSocket(
     'ws://' + window.location.host +
-    '/ws/chat/' + chat_id + '/');
+    '/ws/chat/' + chat_id + '/'
+  );
+}
 
 chatSocket.onopen = function(e) {
     fetchMessages();

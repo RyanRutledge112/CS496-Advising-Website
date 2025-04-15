@@ -6,8 +6,5 @@ endif
 
 SHELL := /bin/bash
 
-test: test_django
+test:
 	$(TEST_COMMAND)
-
-test_django:
-	pytest --maxfail=1 --disable-warnings -q

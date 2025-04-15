@@ -1,11 +1,84 @@
-const body = document.body;
+var chats = [];
+var email = "";
+var full_name = "";
 
-var email = JSON.parse(body.dataset.email);
-var full_name = JSON.parse(body.dataset.fullName);
-var chats = JSON.parse(body.dataset.chats);
+window.onload = function () {
+  const body = document.body;
+  var testing = body.dataset.testing;
+  if(testing === "true") {
+    console.log(testing);
+    var email = body.dataset.email;
+    var full_name = body.dataset.fullName;
+    var chats = body.dataset.chats ? JSON.parse(body.dataset.chats) : [];
+  } else {
+    var email = JSON.parse(body.dataset.email);
+    var full_name = JSON.parse(body.dataset.fullName);
+    var chats = JSON.parse(body.dataset.chats);
 
-email = email.replace(/^"(.*)"$/, '$1');
-full_name = full_name.replace(/^"(.*)"$/, '$1');
+    email = email.replace(/^"(.*)"$/, '$1');
+    full_name = full_name.replace(/^"(.*)"$/, '$1');
+  }
+
+  document.querySelector('#search-input').onkeyup = function(e) {
+    var messageInputDom = document.getElementById('search-input');
+    var message = messageInputDom.value;
+  
+    if(chatSocket.readyState === WebSocket.CLOSED){
+      console.log('WebSocket is not currently ready to send data and is closed.');
+      alert('WebSocket is closed right now. Try again later.');
+      return;
+    }
+  
+    chatSocket.send(JSON.stringify({
+        'command': 'search_chats',
+        'email': email,
+        'message': message,
+    }));
+  };
+
+  document.querySelector('.close-add-chat').addEventListener('click', closeModal);
+
+  document.getElementById('newChatForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+    chatMembers = getSelectedMembers();
+  
+    if(chatSocket.readyState === WebSocket.CLOSED){
+      console.log('WebSocket is not currently ready to send data and is closed.');
+      alert('WebSocket is closed right now. Try again later.');
+      return;
+    }
+  
+    chatSocket.send(JSON.stringify({
+      'command': 'new_chat',
+      'chatMemberIDs': chatMembers['ids'],
+      'chatMemberNames': chatMembers['names'],
+      'createdBy': email
+    }));
+    closeModal('chatPopup');
+  });
+
+  document.getElementById('deleteChatForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+    chatsToDelete = getChatsToDelete();
+  
+    if(chatSocket.readyState === WebSocket.CLOSED){
+      console.log('WebSocket is not currently ready to send data and is closed.');
+      alert('WebSocket is closed right now. Try again later.');
+      return;
+    }
+  
+    chatSocket.send(JSON.stringify({
+      'command': 'delete_chats',
+      'chatIDs': chatsToDelete,
+      'deletedBy': email
+    }));
+    closeModal('delete-chat-popup');
+  
+    chats = chats.filter(chat => !chatsToDelete.includes(chat.id));
+    removeChatsFromSelect(chatsToDelete)
+  })
+}
+
 
 $(document).ready(function() {
   $('#delete-chat').on('click', function () {
@@ -25,8 +98,11 @@ $(document).ready(function() {
   });
 });
 
-var chatSocket = new ReconnectingWebSocket(
-    'ws://' + window.location.host + '/ws/chat/home/');
+if (typeof window !== 'undefined') {
+  var chatSocket = new ReconnectingWebSocket(
+    'ws://' + window.location.host + '/ws/chat/home/'
+  );
+}
 
 chatSocket.onmessage = function(e) {
   var data = JSON.parse(e.data);
@@ -43,23 +119,6 @@ chatSocket.onmessage = function(e) {
       showNewMessage(data['chat']);
     }
 }
-
-document.querySelector('#search-input').onkeyup = function(e) {
-  var messageInputDom = document.getElementById('search-input');
-  var message = messageInputDom.value;
-
-  if(chatSocket.readyState === WebSocket.CLOSED){
-    console.log('WebSocket is not currently ready to send data and is closed.');
-    alert('WebSocket is closed right now. Try again later.');
-    return;
-  }
-
-  chatSocket.send(JSON.stringify({
-      'command': 'search_chats',
-      'email': email,
-      'message': message,
-  }));
-};
 
 function setActiveChat(clickedChat) {
   document.querySelectorAll('.chat').forEach(chat => {
@@ -184,8 +243,6 @@ function closeModal(popup) {
   document.body.classList.remove('modal-open');
 }
 
-document.querySelector('.close-add-chat').addEventListener('click', closeModal);
-
 function getSelectedMembers() {
   var selectedMembers = $('#chatParticipants').val();
   var selectedNames = $('#chatParticipants option:selected').map(function() {
@@ -194,25 +251,6 @@ function getSelectedMembers() {
 
   return { 'ids': selectedMembers, 'names': selectedNames };
 }
-
-document.getElementById('newChatForm').addEventListener('submit', function (event) {
-  event.preventDefault();
-  chatMembers = getSelectedMembers();
-
-  if(chatSocket.readyState === WebSocket.CLOSED){
-    console.log('WebSocket is not currently ready to send data and is closed.');
-    alert('WebSocket is closed right now. Try again later.');
-    return;
-  }
-
-  chatSocket.send(JSON.stringify({
-    'command': 'new_chat',
-    'chatMemberIDs': chatMembers['ids'],
-    'chatMemberNames': chatMembers['names'],
-    'createdBy': email
-  }));
-  closeModal('chatPopup');
-});
 
 function getChatsToDelete(){
   var selectedChats = $('#chatsToDelete').val();
@@ -226,27 +264,6 @@ function getChatsToDelete(){
   return selectedChats;
 }
 
-document.getElementById('deleteChatForm').addEventListener('submit', function (event) {
-  event.preventDefault();
-  chatsToDelete = getChatsToDelete();
-
-  if(chatSocket.readyState === WebSocket.CLOSED){
-    console.log('WebSocket is not currently ready to send data and is closed.');
-    alert('WebSocket is closed right now. Try again later.');
-    return;
-  }
-
-  chatSocket.send(JSON.stringify({
-    'command': 'delete_chats',
-    'chatIDs': chatsToDelete,
-    'deletedBy': email
-  }));
-  closeModal('delete-chat-popup');
-
-  chats = chats.filter(chat => !chatsToDelete.includes(chat.id));
-  removeChatsFromSelect(chatsToDelete)
-})
-
 function removeChatsFromSelect(chatIds) {
   const select = document.getElementById('chatsToDelete');
   chatIds.forEach(id => {
@@ -257,7 +274,6 @@ function removeChatsFromSelect(chatIds) {
 
 function addChatToSidebar(newChat) {
     var chatList = document.querySelector('#chats ul');
-
     var existingChat = chatList.querySelector(`[data-chat-id="${newChat['chat_id']}"]`);
     if (existingChat) {
         return;
@@ -365,3 +381,5 @@ function getProfilePicture(letter) {
   
   return pictures[letter.toLowerCase()] || 'https://www.wku.edu/athletictraditions/images/redtowellogo.gif';
 }
+
+window.addChatToSidebar = addChatToSidebar;
