@@ -169,6 +169,10 @@ def upload_transcript(request):
         # store recommendations in session for later download
         request.session['recommendations'] = formatted_recs
 
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print("Transcript deleted")
+
         return render(request, "recommendedClasses.html", {
             "transcript_data": results["transcript_data"],
             "major_requirements": results["major_requirements"],
