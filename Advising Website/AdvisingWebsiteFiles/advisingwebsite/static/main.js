@@ -53,11 +53,3 @@ $("#status-options ul li").click(function() {
 //     return false;
 //   }
 // });
-
-function showMajorNumberInfo() {
-    alert("You can find all major, minor, and certficate numbers on your Degree Works or the WKU website. It's 3-4 numbers and some have a letter at the end.");
-}
-
-function showPassInfo() {
-    alert("Passwords must be at least 9 characters long, including an uppercase, number, and special character.");
-}

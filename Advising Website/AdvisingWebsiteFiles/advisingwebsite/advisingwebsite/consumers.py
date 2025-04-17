@@ -168,6 +168,48 @@ class ChatConsumer(WebsocketConsumer):
             'chats': list(filtered_chats)
         })
     
+    def load_chats(self, data):
+        user = User.objects.filter(email=data['email']).first()
+
+        last_message_content_subquery = Message.objects.filter(
+            chat=OuterRef('chat_id')
+        ).order_by('-date_sent').values('message_content')[:1]
+
+        last_message_date_subquery = Message.objects.filter(
+            chat=OuterRef('chat_id')
+        ).order_by('-date_sent').values('date_sent')[:1]
+
+        chat_memberships = ChatMember.objects.filter(
+            user=user,
+            chat_deleted=False
+        ).annotate(
+            last_message=Coalesce(
+                Subquery(last_message_content_subquery, output_field=TextField()),
+                Value("", output_field=TextField())
+            ),
+            last_message_date=Subquery(last_message_date_subquery, output_field=DateTimeField()),
+            new_message=Case(
+                When(
+                    last_message_date__gt=F('chat_last_viewed'),
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField()
+            )
+        ).select_related("chat")
+
+        filtered_chats = [{
+            "id": cm.chat.id,
+            "chat_name": cm.chat.chat_name.replace(user.get_full_name(), "").strip(", ").replace(" ,", ""),
+            "last_message": cm.last_message,
+            "new_message": cm.new_message
+        } for cm in chat_memberships ]
+
+        return self.send_message({
+            'command': 'load_chats',
+            'chats': list(filtered_chats)
+        })
+    
     def delete_chats(self, data):
         user = User.objects.filter(email=data['deletedBy']).first()
 
@@ -201,7 +243,8 @@ class ChatConsumer(WebsocketConsumer):
         'new_chat': new_chat,
         'search_chats': search_chats,
         'delete_chats': delete_chats,
-        'update_last_viewed': update_last_viewed
+        'update_last_viewed': update_last_viewed,
+        'load_chats': load_chats
     }
 
     def connect(self):
