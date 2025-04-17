@@ -53,19 +53,6 @@
       </div>
       <div id="chats">
         <ul>
-            {% for chat in chats %}
-            {% if request.user.id in chat.members %}
-            <li class="chat {% if chat.is_active %}active{% endif %}" data-chat-id="{{ chat.chat_id }}" onclick="setActiveChat(this)">
-                <div class="wrap">
-                    <img src="{{ chat.image_url }}" class="image {% if chat.new_message %}newMessage{% endif %}" alt="{{ chat.name }}" />
-                    <div class="meta">
-                        <p class="name">{{ chat.name }}</p>
-                        <p class="preview">{{ chat.last_message }}</p>
-                    </div>
-                </div>
-            </li>
-            {% endif %}
-            {% endfor %}
         </ul>
     </div>
       <div id="bottom-bar">

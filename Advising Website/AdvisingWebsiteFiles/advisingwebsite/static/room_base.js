@@ -6,14 +6,13 @@ window.onload = function () {
   const body = document.body;
   var testing = body.dataset.testing;
   if(testing === "true") {
-    console.log(testing);
-    var email = body.dataset.email;
-    var full_name = body.dataset.fullName;
-    var chats = body.dataset.chats ? JSON.parse(body.dataset.chats) : [];
+    email = body.dataset.email;
+    full_name = body.dataset.fullName;
+    chats = body.dataset.chats ? JSON.parse(body.dataset.chats) : [];
   } else {
-    var email = JSON.parse(body.dataset.email);
-    var full_name = JSON.parse(body.dataset.fullName);
-    var chats = JSON.parse(body.dataset.chats);
+    email = JSON.parse(body.dataset.email);
+    full_name = JSON.parse(body.dataset.fullName);
+    chats = JSON.parse(body.dataset.chats);
 
     email = email.replace(/^"(.*)"$/, '$1');
     full_name = full_name.replace(/^"(.*)"$/, '$1');
@@ -104,6 +103,13 @@ if (typeof window !== 'undefined') {
   );
 }
 
+chatSocket.onopen = function(e) {
+  chatSocket.send(JSON.stringify({
+    'command': 'load_chats',
+    'email': email,
+  }));
+}
+
 chatSocket.onmessage = function(e) {
   var data = JSON.parse(e.data);
 
@@ -113,7 +119,7 @@ chatSocket.onmessage = function(e) {
       if(newChat['chat_created_by_self']){
         setActiveChatById(newChat['id']);
       }
-    } else if (data['command'] === 'filter_chats'){
+    } else if (data['command'] === 'filter_chats' || data['command'] === 'load_chats'){
       updateShownChats(data);
     } else if (data['command'] === 'chat_ping'){
       showNewMessage(data['chat']);
@@ -138,19 +144,22 @@ function updateShownChats(data) {
   chatList.innerHTML = "";
 
   data['chats'].forEach(chat => {
-      var newChatElement = document.createElement('li');
-      newChatElement.classList.add('chat');
-      newChatElement.setAttribute('data-chat-id', chat['id']);
-      newChatElement.setAttribute('onclick', 'setActiveChat(this)');
-
-      //Removing user's full name from the chat name, then fixing any leftover spaces and commas before being displayed
-      chat['chat_name'] = chat['chat_name']
+    chat['chat_name'] = chat['chat_name']
       .replace(full_name, "")
       .replace(/^,|,$/g, "")
       .replace(/\s*,\s*/g, ", ")
       .replace(/,\s*,+/g, ',')
       .replace(/^(\s*,\s*)+|(\s*,\s*)+$/g, '')
       .trim();
+  });
+
+  data['chats'].sort((a, b) => a['chat_name'].localeCompare(b['chat_name']));
+
+  data['chats'].forEach(chat => {
+      var newChatElement = document.createElement('li');
+      newChatElement.classList.add('chat');
+      newChatElement.setAttribute('data-chat-id', chat['id']);
+      newChatElement.setAttribute('onclick', 'setActiveChat(this)');
 
       var imgClass = chat['new_message'] ? 'newMessage' : '';
 
@@ -383,3 +392,5 @@ function getProfilePicture(letter) {
 }
 
 window.addChatToSidebar = addChatToSidebar;
+window.updateShownChats = updateShownChats;
+window.getProfilePicture = getProfilePicture;
