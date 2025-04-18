@@ -1,0 +1,54 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-18 06:43+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
+
+#: advisingwebsiteapp/templates/home.html:9
+msgid "Welcome, "
+msgstr "¡Bienvenido, "
+
+#: advisingwebsiteapp/templates/home.html:11
+msgid "Upload Transcript"
+msgstr "Subir Transcripción"
+
+#: advisingwebsiteapp/templates/home.html:14
+msgid "Open Messages"
+msgstr "Abrir Transcripción"
+
+#: advisingwebsiteapp/templates/home.html:17
+msgid "Hello WKU Students and Staff! Welcome to the WKU Advising Website!"
+msgstr ""
+"¡Hola, estudiantes y personal de WKU! ¡Bienvenidos al sitio web de "
+"asesoramiento de WKU!"
+
+#: advisingwebsiteapp/templates/home.html:18
+msgid "Please sign in to start advising!"
+msgstr "¡Por favor inicia sesión para comenzar a asesorar!"
+
+#: advisingwebsiteapp/templates/home.html:20
+msgid "Login"
+msgstr "Acceso"
+
+#: advisingwebsiteapp/templates/home.html:23
+msgid "Sign Up"
+msgstr "Inscribirse"
+
+#: advisingwebsiteapp/templates/home.html:35
+msgid "Change Language"
+msgstr "Cambiar idioma"

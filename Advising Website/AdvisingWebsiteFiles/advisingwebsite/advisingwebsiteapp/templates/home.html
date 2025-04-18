@@ -1,28 +1,39 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %} 
 {% block content %}
 <div class="container">
     <div class="home-page">
         <div class="text-center mt-5">
             {% if user.is_authenticated %}
-                <h1 class="signed-in">Welcome, {{ user.first_name }}!</h1>
+                <h1 class="signed-in">{% trans "Welcome, " %}{{ user.first_name }}!</h1>
                 <div class="mt-3">
-                    <a href="{% url 'uploadTranscript' %}" class="btn btn-primary me-2">Upload Transcript</a>
+                    <a href="{% url 'uploadTranscript' %}" class="btn btn-primary me-2">{% trans "Upload Transcript" %}</a>
                 </div>
                 <div class="mt-3">
-                    <a href="{% url 'chatHome' %}" class="btn btn-secondary">Open Messages</a>
+                    <a href="{% url 'chatHome' %}" class="btn btn-secondary">{% trans "Open Messages" %}</a>
                 </div>
             {% else %}
-                <h1 class="signed-out">Hello WKU Students and Staff! Welcome to the WKU Advising Website!</h1>
-                <p>Please sign in to start advising!</p>
+                <h1 class="signed-out">{% trans "Hello WKU Students and Staff! Welcome to the WKU Advising Website!" %}</h1>
+                <p>{% trans "Please sign in to start advising!" %}</p>
                 <div class="mt-3">
-                    <a href="{% url 'login' %}" class="btn btn-primary me-2">Login</a>
+                    <a href="{% url 'login' %}" class="btn btn-primary me-2">{% trans "Login" %}</a>
                 </div>
                 <div class="mt-3">
-                    <a href="{% url 'register' %}" class="btn btn-secondary">Sign Up</a>
+                    <a href="{% url 'register' %}" class="btn btn-secondary">{% trans "Sign Up" %}</a>
                 </div>
             {% endif %}
         </div>
     </div>
-</div>
+        <div class="language-form mt-5 text-center">
+            <form action="{% url 'set_language' %}" method="post">
+                {% csrf_token %}
+                <select name="language">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                </select>
+                <input type="submit" value="{% trans 'Change Language' %}">
+            </form>
+        </div>
+</div> 
 {% endblock %}

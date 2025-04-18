@@ -130,3 +130,6 @@ undetected_chromedriver==3.5.5
 pytest==8.3.3
 pytest-django
 pytest-asyncio
+Django>=3.0,<5.0
+Babel>=2.9
+
