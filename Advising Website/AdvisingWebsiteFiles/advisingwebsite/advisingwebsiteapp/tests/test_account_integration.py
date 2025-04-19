@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from advisingwebsiteapp.models import User, Degree, UserDegree
+from django.utils.translation import activate
 
 class AccountCreationIntegrationTests(TestCase):
     def setUp(self):
@@ -100,6 +101,7 @@ class AccountCreationIntegrationTests(TestCase):
         self.assertEqual(degrees.count(), 2)
 
     def test_all_degrees_loaded_in_registration_form(self):
+        activate('en')
         response = self.client.get(self.register_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.degree1.degree_name)
