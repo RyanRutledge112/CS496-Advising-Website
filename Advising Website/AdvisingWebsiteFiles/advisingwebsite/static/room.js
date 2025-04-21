@@ -91,11 +91,12 @@ window.onload = function() {
       'createdBy': email
     }));
     closeModal('chatPopup');
+    removeChatsFromAddChatSelect(chatMembers['ids']);
   });
 
   document.getElementById('deleteChatForm').addEventListener('submit', function (event) {
     event.preventDefault();
-    chatsToDelete = getChatsToDelete();
+    var chatsToDelete = getChatsToDelete();
   
     if(chatSocket.readyState === WebSocket.CLOSED){
       console.log('WebSocket is not currently ready to send data and is closed.');
@@ -111,7 +112,7 @@ window.onload = function() {
     closeModal('delete-chat-popup');
   
     chats = chats.filter(chat => !chatsToDelete.includes(chat.id));
-    removeChatsFromSelect(chatsToDelete)
+    removeChatsFromDeleteChatSelect(chatsToDelete);
   
     chatsToDelete.forEach(id => {
       console.log('id: ', id);
@@ -497,8 +498,16 @@ function getChatsToDelete(){
   return selectedChats;
 }
 
-function removeChatsFromSelect(chatIds) {
+function removeChatsFromDeleteChatSelect(chatIds) {
   const select = document.getElementById('chatsToDelete');
+  chatIds.forEach(id => {
+      const option = select.querySelector(`option[value="${id}"]`);
+      if (option) option.remove();
+  });
+}
+
+function removeChatsFromAddChatSelect(chatIds) {
+  const select = document.getElementById('chatParticipants');
   chatIds.forEach(id => {
       const option = select.querySelector(`option[value="${id}"]`);
       if (option) option.remove();
