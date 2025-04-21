@@ -1,6 +1,7 @@
 var chats = [];
 var email = "";
 var full_name = "";
+var chatSocket;
 
 window.onload = function () {
   const body = document.body;
@@ -76,8 +77,41 @@ window.onload = function () {
     chats = chats.filter(chat => !chatsToDelete.includes(chat.id));
     removeChatsFromSelect(chatsToDelete)
   })
-}
 
+  if (typeof window !== 'undefined') {
+    var wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    chatSocket = new ReconnectingWebSocket(
+      wsScheme + '://' + window.location.host + '/ws/chat/home/'
+    );
+  }
+
+  chatSocket.onopen = function(e) {
+    chatSocket.send(JSON.stringify({
+      'command': 'load_chats',
+      'email': email,
+    }));
+  }
+  
+  chatSocket.onmessage = function(e) {
+    var data = JSON.parse(e.data);
+  
+    if (data['command']  === 'new_chat'){
+        var newChat = data['chat'];
+        addChatToSidebar(newChat);
+        if(newChat['chat_created_by_self']){
+          setActiveChatById(newChat['id']);
+        }
+      } else if (data['command'] === 'filter_chats' || data['command'] === 'load_chats'){
+        updateShownChats(data);
+      } else if (data['command'] === 'chat_ping'){
+        showNewMessage(data['chat']);
+      }
+  }
+
+  chatSocket.onclose = function(e) {
+    console.error('Chat socket closed unexpectedly');
+  };
+}
 
 $(document).ready(function() {
   $('#delete-chat').on('click', function () {
@@ -96,35 +130,6 @@ $(document).ready(function() {
     });
   });
 });
-
-if (typeof window !== 'undefined') {
-  var chatSocket = new ReconnectingWebSocket(
-    'ws://' + window.location.host + '/ws/chat/home/'
-  );
-}
-
-chatSocket.onopen = function(e) {
-  chatSocket.send(JSON.stringify({
-    'command': 'load_chats',
-    'email': email,
-  }));
-}
-
-chatSocket.onmessage = function(e) {
-  var data = JSON.parse(e.data);
-
-  if (data['command']  === 'new_chat'){
-      var newChat = data['chat'];
-      addChatToSidebar(newChat);
-      if(newChat['chat_created_by_self']){
-        setActiveChatById(newChat['id']);
-      }
-    } else if (data['command'] === 'filter_chats' || data['command'] === 'load_chats'){
-      updateShownChats(data);
-    } else if (data['command'] === 'chat_ping'){
-      showNewMessage(data['chat']);
-    }
-}
 
 function setActiveChat(clickedChat) {
   document.querySelectorAll('.chat').forEach(chat => {
@@ -344,7 +349,7 @@ function showNewMessage(data) {
       let chat_id = chat.getAttribute('data-chat-id')
 
       if (String(chat_id) === String(data['chat_id'])) {
-        let imgElement = chat.querySelector('.image');
+        let imgElement = chat.querySelector('img');
         let last_message = chat.querySelector('.preview');
 
         if(imgElement){

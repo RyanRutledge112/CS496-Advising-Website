@@ -35,8 +35,6 @@ class ChatConsumer(WebsocketConsumer):
         
         participants = ChatMember.objects.filter(chat=chat).select_related('user')
 
-        print("Chat participants:", participants)
-
         #sends message out to participants in the chat so their chats are dynamically updated as necessary
         for member in participants:
             async_to_sync(self.channel_layer.group_send)(

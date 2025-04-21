@@ -1,4 +1,5 @@
 const body = document.body;
+var chatSocket;
 
 var chats = [];
 var email = "";
@@ -120,6 +121,49 @@ window.onload = function() {
       }
     });
   })
+
+  if (typeof window !== 'undefined') {
+    var wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    chatSocket = new ReconnectingWebSocket(
+      wsScheme + '://' + window.location.host +
+      '/ws/chat/' + chat_id + '/'
+    );
+  }
+  
+  chatSocket.onopen = function(e) {
+    chatSocket.send(JSON.stringify({
+      'command': 'load_chats',
+      'email': email,
+    }));
+    fetchMessages();
+  };
+  
+  chatSocket.onmessage = function(e) {
+      var data = JSON.parse(e.data);
+      if (data['command'] === 'messages') {
+        for (let i=0; i<data['messages'].length; i++) {
+          createMessage(data['messages'][i]);
+        }
+      } else if (data['command'] === 'new_message'){
+        createMessage(data['message']);
+      } else if (data['command']  === 'new_chat'){
+        var newChat = data['chat'];
+        addChatToSidebar(newChat);
+        if(newChat['chat_created_by_self']){
+          setActiveChatById(newChat['id']);
+        }
+      } else if (data['command'] === 'filter_chats'){
+        roomUpdateShownChats(data);
+      } else if (data['command'] === 'chat_ping'){
+        showNewMessage(data['chat']);
+      } else if (data['command'] === 'load_chats'){
+        loadChats(data);
+      }
+  };
+  
+  chatSocket.onclose = function(e) {
+      console.error('Chat socket closed unexpectedly');
+  };
 }
 
 $(document).ready(function() {
@@ -139,48 +183,6 @@ $(document).ready(function() {
     });
   });
 });
-
-if (typeof window !== 'undefined') {
-  var chatSocket = new ReconnectingWebSocket(
-    'ws://' + window.location.host +
-    '/ws/chat/' + chat_id + '/'
-  );
-}
-
-chatSocket.onopen = function(e) {
-  chatSocket.send(JSON.stringify({
-    'command': 'load_chats',
-    'email': email,
-  }));
-  fetchMessages();
-};
-
-chatSocket.onmessage = function(e) {
-    var data = JSON.parse(e.data);
-    if (data['command'] === 'messages') {
-      for (let i=0; i<data['messages'].length; i++) {
-        createMessage(data['messages'][i]);
-      }
-    } else if (data['command'] === 'new_message'){
-      createMessage(data['message']);
-    } else if (data['command']  === 'new_chat'){
-      var newChat = data['chat'];
-      addChatToSidebar(newChat);
-      if(newChat['chat_created_by_self']){
-        setActiveChatById(newChat['id']);
-      }
-    } else if (data['command'] === 'filter_chats'){
-      roomUpdateShownChats(data);
-    } else if (data['command'] === 'chat_ping'){
-      showNewMessage(data['chat']);
-    } else if (data['command'] === 'load_chats'){
-      loadChats(data);
-    }
-};
-
-chatSocket.onclose = function(e) {
-    console.error('Chat socket closed unexpectedly');
-};
 
 function fetchMessages(retryCount = 0) {
   const MAX_RETRIES = 5;
@@ -575,9 +577,8 @@ function showNewMessage(data) {
       }
 
       if (String(id) === String(data['chat_id'])) {
-        let imgElement = chat.querySelector('.image');
+        let imgElement = chat.querySelector('img');
         let last_message = chat.querySelector('.preview');
-
 
         if(imgElement && String(id) !== String(chat_id)){
           imgElement.classList.add('newMessage');

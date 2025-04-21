@@ -367,7 +367,6 @@ test('should grab correct text from input box and properly send message data thr
   }
 
   if(mockSocket.readyState === WebSocket.CLOSED){
-    console.log('WebSocket is not currently ready to send data and is closed.');
     alert('WebSocket is closed right now. Try again later.');
     return;
   }

@@ -15,21 +15,15 @@ from channels.auth import AuthMiddlewareStack
 from advisingwebsite.routing import websocket_urlpatterns
 import sys
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "AdvisingWebsite.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "advisingwebsite.settings")
 
 django_asgi_app = get_asgi_application()
-
-is_testing = 'pytest' in sys.modules
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         "websocket": (
             AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
-            if is_testing
-            else AllowedHostsOriginValidator(
-                AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
-            )
         )
     }
 )
