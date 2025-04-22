@@ -3,11 +3,9 @@ import os
 from django.apps import apps
 from django.conf import settings
 
-test_db_path = os.path.abspath("C:/Users/ryan/Desktop/CS496-Advising-Website/Advising Website/AdvisingWebsiteFiles/advisingwebsite/test_db.sqlite3")
-
-DATABASES['default']['NAME'] = test_db_path
+DATABASES['default']['NAME'] = os.path.join(BASE_DIR, 'test_db.sqlite3')
 DATABASES['default']['TEST'] = {
-    'NAME': test_db_path,
+    'NAME': os.path.join(BASE_DIR, 'test_db.sqlite3'),
 }
 
 apps.populate(settings.INSTALLED_APPS)
