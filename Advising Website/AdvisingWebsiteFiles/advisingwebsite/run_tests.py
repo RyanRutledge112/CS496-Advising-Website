@@ -9,6 +9,7 @@ def run_tests():
     # Now, run only the specific test (test_messaging_system_integration.py) in 'seleniumTests' with 'testSettings.py'
     os.environ['DJANGO_SETTINGS_MODULE'] = 'advisingwebsite.testSettings'
     subprocess.run(['pytest', '--maxfail=1', '--disable-warnings', '-q', '-s', 'advisingwebsiteapp/seleniumTests/test_messaging_system_integration.py'])
+    subprocess.run(['pytest', '--maxfail=1', '--disable-warnings', '-q', '-s', 'advisingwebsiteapp/seleniumTests/test_page_load_times.py'])
 
     # Handle npm tests based on the system type
     system = platform.system()
