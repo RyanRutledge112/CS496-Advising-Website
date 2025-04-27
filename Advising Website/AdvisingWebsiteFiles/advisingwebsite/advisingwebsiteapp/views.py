@@ -127,12 +127,15 @@ def register(request):
 
     return render(request, 'register.html', {'grouped_degrees': grouped_degrees})
 
+# Handles transcript upload, processing, and generation 
 def upload_transcript(request):
     if request.method == "POST" and request.FILES.get("pdfFile"):
+        # get data from user 
         uploaded_file = request.FILES["pdfFile"]
         credit_hours_raw = request.POST.get("inputCreditHours", "").strip()
         credit_hours = int(credit_hours_raw) if credit_hours_raw.isdigit() else 15
         selected_term = request.POST.get("term", "").lower()
+        # temp store transcript
         file_path = f"uploads/{uploaded_file.name}"
 
         os.makedirs("uploads", exist_ok=True)
@@ -141,6 +144,7 @@ def upload_transcript(request):
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
 
+        # process transcript and generate recs
         try:
             results = process_and_recommend_courses(
                 request.user,
@@ -149,11 +153,22 @@ def upload_transcript(request):
                 credit_hours
             )
         except AttributeError:
+            # file upload error
+            if os.path.exists(file_path):
+                os.remove(file_path)
             return render(request, "uploadTranscript.html", {
                 "error": "Student ID not found in user profile."
             })
 
-        # Safely format recommendations
+        # error handling for mismatched stu id
+        if "error" in results:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            return render(request, "uploadTranscript.html", {
+                "error": results["error"]
+            })
+        
+        # fomats recs for display purposes 
         def format_rec(c):
             if isinstance(c, list):
                 return [
@@ -162,11 +177,11 @@ def upload_transcript(request):
                 ]
             elif hasattr(c, 'course_name'):
                 return {'course_name': c.course_name, 'hours': c.hours}
-            return None  
+            return None
 
         formatted_recs = list(filter(None, [format_rec(c) for c in results["recommendations"]]))
 
-        # store recommendations in session for later download
+        # save recs to session for later download 
         request.session['recommendations'] = formatted_recs
 
         if os.path.exists(file_path):
@@ -190,8 +205,23 @@ def process_and_recommend_courses(user, file_path, selected_term, max_hours):
         raise AttributeError("Student ID not found in user profile.")
     
     processed_data = parse_transcript(file_path)
+    # validate that stu ids match for uploaded transcript and db
+    try:
+        parsed_student_id = int(processed_data.get("student_id", "0"))
+    except ValueError:
+        parsed_student_id = 0  
+
+    try:
+        user_student_id = int(getattr(user, "student_id", 0))
+    except ValueError:
+        user_student_id = 0  
+
+    if parsed_student_id != user_student_id:
+        return {"error": "Student ID in uploaded transcript does not match your account."}
+    
     store_user_degree(processed_data)
 
+    # extract maj reqs from WKU website for stu
     major_requirements = extract_major_requirements(user.student_id)
 
     major_req_data = extract_major_requirements(user.student_id)
@@ -199,6 +229,7 @@ def process_and_recommend_courses(user, file_path, selected_term, max_hours):
     instructional_entries = major_req_data["instructions"]
     instructional_rules = major_req_data.get("instructional_rules", [])  
 
+    # generate the recs after getting prog reqs 
     try:
         result = recommend_schedule(
             user,
@@ -222,6 +253,7 @@ def process_and_recommend_courses(user, file_path, selected_term, max_hours):
         "notice": result["notice"]
     }
 
+# Handles download recs as csv file
 def download_recommendations(request):
     recommendations = request.session.get('recommendations', [])
 
@@ -233,7 +265,14 @@ def download_recommendations(request):
     writer.writerow(['Course Name', 'Credit Hours'])
 
     for course in recommendations:
-        writer.writerow([course['course_name'], course['hours']])
+        if isinstance(course, dict):
+            writer.writerow([course['course_name'], course['hours']])
+        elif isinstance(course, list):
+            if all(isinstance(item, dict) for item in course):
+                for item in course:
+                    writer.writerow([f"Option: {item['course_name']}", item['hours']])
+            else:
+                writer.writerow(course)
 
     return response
 
