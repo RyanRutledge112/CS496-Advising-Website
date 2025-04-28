@@ -106,6 +106,8 @@ window.onload = function () {
         updateShownChats(data);
       } else if (data['command'] === 'chat_ping'){
         showNewMessage(data['chat']);
+      } else if (data['command'] === 'error'){
+        alert(data['error']);
       }
   }
 

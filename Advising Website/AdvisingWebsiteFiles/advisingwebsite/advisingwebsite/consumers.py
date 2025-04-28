@@ -60,27 +60,42 @@ class ChatConsumer(WebsocketConsumer):
 
     def new_chat(self, data):
         chat_maker = User.objects.filter(email=data['createdBy']).first()
-        chat_name = f"{chat_maker.get_full_name()}"
+        selected_member_ids = set(map(int, data['chatMemberIDs']))
+        selected_member_ids.add(chat_maker.id)
+        print(f"Member ids: {selected_member_ids}")
 
+        user_chats = ChatMember.objects.filter(user=chat_maker).values_list('chat_id', flat=True)
+
+        for chat_id in user_chats:
+            participants = ChatMember.objects.filter(chat_id=chat_id).values_list('user_id', flat=True)
+            participant_ids = set(participants)
+            print(f"Member ids: {participant_ids}")
+
+            print(participant_ids == selected_member_ids)
+
+            if participant_ids == selected_member_ids:
+                return self.send_message({
+                    'command': 'error',
+                    'error': 'A chat with these members already exists.'
+                })
+
+        chat_name = f"{chat_maker.get_full_name()}"
         for chatMemberName in data['chatMemberNames']:
             chat_name += f', {chatMemberName}'
-        
-        new_chat = Chat.objects.create(chat_name = chat_name)
+            
+        new_chat = Chat.objects.create(chat_name=chat_name)
 
-        ChatMember.objects.create(
-            user = chat_maker,
-            chat = new_chat
-        )
+        ChatMember.objects.create(user=chat_maker, chat=new_chat)
 
         for chatMemberID in data['chatMemberIDs']:
             ChatMember.objects.create(
-                user = User.objects.filter(id=chatMemberID).first(),
-                chat = new_chat
+                user=User.objects.filter(id=chatMemberID).first(),
+                chat=new_chat
             )
-        
+            
         participants = ChatMember.objects.filter(chat=new_chat).select_related('user')
 
-        #sends chats out to participants in chat so their chats are dynamically updated as necessary
+        #Sends new chat info to participants to dynamically update chat page
         for member in participants:
             async_to_sync(self.channel_layer.group_send)(
                 f'user_{member.user.id}',
@@ -98,7 +113,6 @@ class ChatConsumer(WebsocketConsumer):
                 }
             )
         
-        #return chat back to sender
         return self.send_message({
             'command': 'new_chat',
             'chat': {
@@ -108,6 +122,7 @@ class ChatConsumer(WebsocketConsumer):
                 'chat_created_by_self': True
             }
         })
+
 
     def messages_to_json(self, messages):
         result = []

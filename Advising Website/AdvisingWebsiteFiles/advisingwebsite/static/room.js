@@ -159,6 +159,8 @@ window.onload = function() {
         showNewMessage(data['chat']);
       } else if (data['command'] === 'load_chats'){
         loadChats(data);
+      } else if (data['command'] === 'error'){
+        alert(data['error']);
       }
   };
   
