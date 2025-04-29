@@ -1,6 +1,14 @@
+# Reccomendation not the best system because it is ruled based
+# Based on restrictions I can think of at this time 
+# Such as terms, prereqs, credit limit
+# In the db, we have stored restrictions which have notes such as 
+# Must pass prereq with a C, but I don't take that into consideration at this time
+# In terms of instructional rows such as select from 300 level courses 6 hours,
+# I don't have the most complex system for that, I just have the most basic for now
 from datetime import datetime
 from advisingwebsiteapp.models import Course, DegreeCourse, UserDegree, Prerequisites
 import re
+import random
 
 # Normalize course name to sub and number 
 def normalize_course_name(name):
@@ -282,38 +290,38 @@ def filter_by_recent_terms(courses, selected_term):
     # determines if course is avaliable based on terms 
     def is_course_available(term_list, selected_term):
         if not term_list:
-            # No offering info = not available
             return False  
 
         seasons = [season for season, year in term_list]
-        if selected_term not in seasons:
-            return False 
-
-        years = [year for season, year in term_list]
-        last_year = max(years)
-
-        if last_year < current_year - 2:
-            return False
 
         # Offered all year round
         if all(season in seasons for season in ["fall", "winter", "spring", "summer"]):
             return True
 
         # Offered every fall and spring
-        if all(season in seasons for season in ["fall", "spring"]):
+        if all(season in seasons for season in ["fall", "spring"]) and selected_term in ["fall", "spring"]:
             return True
 
+        season_years = [year for season, year in term_list if season == selected_term]
+        if not season_years:
+            return False
+
+        latest_season_year = max(season_years)
+
+        current_year = datetime.now().year
+        if latest_season_year < current_year - 2:
+            return False
+
         # Check every other year pattern for selected term
-        term_years = sorted([year for season, year in term_list if season == selected_term])
-        if len(term_years) >= 2:
-            diffs = [j - i for i, j in zip(term_years[:-1], term_years[1:])]
+        if len(season_years) >= 2:
+            diffs = [j - i for i, j in zip(season_years[:-1], season_years[1:])]
             if all(diff == 2 for diff in diffs):
-                if current_year % 2 == term_years[-1] % 2:
+                if current_year % 2 == season_years[-1] % 2:
                     return True
 
-        # Check if offered in selected term recently
-        for season, year in term_list:
-            if season == selected_term and year >= current_year - 1:
+        # Fallback: if offered in selected term very recently
+        for year in season_years:
+            if year >= current_year - 1:
                 return True
 
         return False
@@ -383,6 +391,9 @@ def filter_grouped_degree_courses(courses, completed_names, degree):
 
 # Generate course recs
 def recommend_schedule(user, transcript_data, selected_term, max_hours=15, instructional_rules=[]):
+    SPECIAL_HOUR_GROUPS = {
+        "a0b8b924-c7b0-4e65-b77b-6b757f1b7a76": 12,
+    }
     max_hours = int(max_hours)
     transcript_courses = get_user_completed_courses(transcript_data)
     completed_names = {normalize_course_name(c.course_name) for c in transcript_courses}
@@ -494,6 +505,9 @@ def recommend_schedule(user, transcript_data, selected_term, max_hours=15, instr
     user_degree_ids = [ud.degree.id for ud in user_degrees]
 
     # pick courses for candidates 
+    # degree courses are the most important,
+    # then colonade
+    # then missing prereq for degree courses
     for ud in user_degrees:
         degree = ud.degree
 
@@ -508,8 +522,23 @@ def recommend_schedule(user, transcript_data, selected_term, max_hours=15, instr
             group_id = dc_entry.group_id
 
             # skip if group already completed or used 
-            if group_id and (degree.id, group_id) in completed_group_ids:
-                continue
+            if group_id:
+                if (degree.id, group_id) in completed_group_ids and group_id not in SPECIAL_HOUR_GROUPS:
+                    continue 
+
+                #for special groups, check if hours completed < required
+                if group_id in SPECIAL_HOUR_GROUPS:
+                    required_hours = SPECIAL_HOUR_GROUPS[group_id]
+
+                    # calculate completed hours for this group
+                    full_group = DegreeCourse.objects.filter(group_id=group_id).select_related('course')
+                    completed_group_hours = 0
+                    for dc in full_group:
+                        if normalize_course_name(dc.course.course_name) in completed_names:
+                            completed_group_hours += float(dc.course.hours or 0)
+
+                    if completed_group_hours >= required_hours:
+                        continue  
 
             if group_id and group_id in used_group_ids:
                 continue
@@ -528,6 +557,13 @@ def recommend_schedule(user, transcript_data, selected_term, max_hours=15, instr
             # handle groups
             if group_id:
                 full_group = DegreeCourse.objects.filter(group_id=group_id).select_related('course')
+
+                # calculate completed hours
+                completed_group_hours = 0
+                for dc in full_group:
+                    if normalize_course_name(dc.course.course_name) in completed_names:
+                        completed_group_hours += float(dc.course.hours or 0)
+
                 group_courses = [
                     dc.course for dc in full_group
                     if normalize_course_name(dc.course.course_name) not in completed_names
@@ -535,19 +571,43 @@ def recommend_schedule(user, transcript_data, selected_term, max_hours=15, instr
                 group_courses = filter_by_recent_terms(group_courses, selected_term)
                 group_courses = list({c.course_name: c for c in group_courses}.values())
 
-                max_group_hours = max((float(c.hours or 0) for c in group_courses), default=0)
-                coreq_hours = sum(float(c.hours or 0) for c in coreqs)
-                bundle_hours = max_group_hours + coreq_hours
+                required_hours = SPECIAL_HOUR_GROUPS.get(group_id, None)
 
-                if total_hours() + bundle_hours <= max_hours:
-                    reason = (
-                        f"Degree core/elective requirement group ({dc_entry.degree.degree_name})"
-                        if len(group_courses) > 1 else
-                        f"Degree core/elective requirement ({dc_entry.degree.degree_name})"
-                    )
-                    add_with_reason(group_courses if len(group_courses) > 1 else group_courses[0], reason)
-                    add_coreqs(coreqs)
-                    used_group_ids.add(group_id)
+                if required_hours:
+                    selected_courses = []
+                    accumulated = completed_group_hours  
+
+                    for course in group_courses:
+                        course_hours = float(course.hours or 0)
+
+                        if accumulated >= required_hours:
+                            break
+
+                        if total_hours() + course_hours > max_hours:
+                            continue 
+
+                        selected_courses.append(course)
+                        accumulated += course_hours
+
+                    if selected_courses:
+                        if accumulated >= required_hours:
+                            add_with_reason(selected_courses, f"Degree core/elective requirement group ({dc_entry.degree.degree_name})")
+                            add_coreqs(coreqs)
+                            used_group_ids.add(group_id)
+                        else:
+                            add_with_reason(selected_courses, f"Partial degree group ({dc_entry.degree.degree_name}) - more needed")
+                            add_coreqs(coreqs)
+
+                else:
+                    # Normal behavior: pick 1 course
+                    if group_courses:
+                        bundle_hours = float(group_courses[0].hours or 0) + sum(float(c.hours or 0) for c in coreqs)
+                        if total_hours() + bundle_hours <= max_hours:
+                            add_with_reason(group_courses if len(group_courses) > 1 else group_courses[0],
+                                            f"Degree core/elective requirement group ({dc_entry.degree.degree_name})")
+                            add_coreqs(coreqs)
+                            used_group_ids.add(group_id)
+
             else:
                 # handle ungrouped
                 bundle_hours = float(course.hours or 0) + sum(float(c.hours or 0) for c in coreqs)
@@ -570,16 +630,86 @@ def recommend_schedule(user, transcript_data, selected_term, max_hours=15, instr
                         add_with_reason(course, reason)
 
                     add_coreqs(coreqs)
+    colonade_inserted = []
+    for colonade_id, course_list in colonade_map.items():
+        available = [
+            c for c in course_list
+            if normalize_course_name(c.course_name) not in completed_names
+            and c not in recommendations
+        ]
 
-    # handle missing prereqs 
+        available = filter_by_recent_terms(available, selected_term)
+
+        # pick 5 random from colonade section
+        # so people arent all recommended the same courses 
+        available = list({c.course_name: c for c in available}.values())
+        random.shuffle(available)  
+        available = available[:5]
+
+        if not available:
+            continue
+
+        max_hours_in_group = max(float(c.hours or 0) for c in available)
+
+        if total_hours() + max_hours_in_group > max_hours:
+            continue
+
+        add_with_reason(available, f"Colonade ({colonade_id})")
+        colonade_inserted.extend(available)
+
+        if total_hours() >= max_hours:
+            break  
+
+    for inserted in colonade_inserted:
+        if inserted in colonade_suggestions:
+            colonade_suggestions.remove(inserted)
     if missing_prereq_courses:
+        already_recommended = {
+            normalize_course_name(r['course'].course_name): r['reason']
+            for r in recommendation_reasons
+        }
+
+        recommended_course_names = {
+            normalize_course_name(c.course_name)
+            for c in recommendations
+            if not isinstance(c, list)
+        }
+
+        completed_course_names = {
+            normalize_course_name(c.course_name)
+            for c in transcript_courses
+        }
+
         for prereq_name in missing_prereq_courses:
             prereq_course = Course.objects.filter(course_name__startswith=prereq_name).first()
             if prereq_course:
+                normalized = normalize_course_name(prereq_course.course_name)
                 prereq_hours = float(prereq_course.hours or 0)
-                if total_hours() + prereq_hours > max_hours:
-                    break  
-                add_with_reason(prereq_course, "Missing prerequisite for required course")
+
+                filtered = filter_by_recent_terms([prereq_course], selected_term)
+                if not filtered:
+                    continue  
+
+                prereq_reqs = Prerequisites.objects.filter(course=prereq_course)
+                unmet = []
+                for req in prereq_reqs:
+                    req_name = normalize_course_name(req.prerequisite.course_name)
+                    if req_name not in completed_course_names and req_name not in recommended_course_names:
+                        unmet.append(req_name)
+
+                if unmet:
+                    continue  
+
+                if normalized in already_recommended:
+                    current_reason = already_recommended[normalized]
+                    if "Degree core/elective requirement" not in current_reason:
+                        for reason_entry in recommendation_reasons:
+                            if normalize_course_name(reason_entry['course'].course_name) == normalized:
+                                reason_entry['reason'] = "Missing prerequisite for required course"
+                    continue 
+
+                if total_hours() + prereq_hours <= max_hours:
+                    add_with_reason(prereq_course, "Missing prerequisite for required course")
 
     # Handle instructional rules
     for rule in instructional_rules:
@@ -604,7 +734,7 @@ def recommend_schedule(user, transcript_data, selected_term, max_hours=15, instr
             accumulated += ch
             if accumulated >= min_hours:
                 break
-    
+
     # add note if schedule not filled
     partial_fill_notice = ""
     if total_hours() < max_hours:
